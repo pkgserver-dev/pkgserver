@@ -26,6 +26,8 @@ replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.6
 
 replace k8s.io/code-generator => k8s.io/code-generator v0.29.3
 
+replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.2
+
 require (
 	github.com/GoogleContainerTools/kpt-functions-sdk/go/fn v0.0.0-20230427202446-3255accc518d
 	github.com/adrg/xdg v0.4.0
@@ -40,7 +42,7 @@ require (
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/resource v0.0.0-20231228040228-cf28542fa2c6
 	github.com/henderiw/store v0.0.0-20240311135319-eb32ab80594b
-	github.com/kform-dev/kform v0.0.3
+	github.com/kform-dev/kform v0.0.3-0.20240512164210-e8e46f2c67ed
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
@@ -112,14 +114,15 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/henderiw-nephio/kform v0.0.3-0.20231122120427-bba8439876bb // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/kform-dev/pkg-server v0.0.0-20240307074406-56979a3e1134 // indirect
+	github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d // indirect
+	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706 // indirect
+	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -134,7 +137,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/oklog/run v1.0.0 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
