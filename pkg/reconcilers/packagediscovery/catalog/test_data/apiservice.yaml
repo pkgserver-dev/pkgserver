@@ -1,0 +1,14 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.pkg.kform.dev
+spec:
+  insecureSkipTLSVerify: true
+  group: pkg.kform.dev
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: pkg-server
+    namespace: pkg-system
+    port: 6444
+  version: v1alpha1

@@ -1,0 +1,29 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pkg-server-clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["namespaces", "secrets"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: ["config.pkg.kform.dev"]
+  resources: ["repositories", "repositories/status"]
+  verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["config.pkg.kform.dev"]
+  resources: ["packagevariants", "packagevariants/status"]
+  verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["flowcontrol.apiserver.k8s.io"]
+  resources: ["flowschemas", "prioritylevelconfigurations"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["pkg.kform.dev"]
+  resources: ["packagerevisions", "packagerevisions/status"]
+  verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["pkg.kform.dev"]
+  resources: ["packagerevisionresources", "packagerevisionresources/status"]
+  verbs: ["get", "list", "watch"]
