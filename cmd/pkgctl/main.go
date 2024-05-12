@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	//defaultConfigFileSubDir = "kform"
-	//defaultConfigFileName   = "kform.yaml"
+	//defaultConfigFileSubDir = "pkgctl"
+	//defaultConfigFileName   = "pkgctl.yaml"
 )
 
 func main() {

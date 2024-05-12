@@ -135,6 +135,7 @@ func doGen() error {
 				"k8s.io/apimachinery/pkg/apis/meta/v1,"+
 				"k8s.io/apimachinery/pkg/runtime,"+
 				"k8s.io/apimachinery/pkg/version,"+
+				"k8s.io/api/core/v1,"+
 				inputs,
 			"-O", "zz_generated.openapi",
 			"--output-package", path.Join(module, "apis/generated/openapi")))

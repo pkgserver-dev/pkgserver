@@ -44,14 +44,14 @@ func init() {
 
 const (
 	controllerName = "RepositoryController"
-	finalizer      = "repository.config.pkg.kform.dev/finalizer"
+	finalizer      = "repository.config.pkg.pkgserver.dev/finalizer"
 	// errors
 	errGetCr        = "cannot get cr"
 	errUpdateStatus = "cannot update status"
 )
 
-//+kubebuilder:rbac:groups=config.kform.dev,resources=repositories,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=config.kform.dev,resources=repositories/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=config.pkgserver.dev,resources=repositories,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=config.pkgserver.dev,resources=repositories/status,verbs=get;update;patch
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, c interface{}) (map[schema.GroupVersionKind]chan event.GenericEvent, error) {

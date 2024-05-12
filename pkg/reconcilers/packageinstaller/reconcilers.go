@@ -51,7 +51,7 @@ const (
 	controllerName = "PackageInstallerController"
 	//controllerEventError = "PkgRevInstallerError"
 	controllerEvent = "PackageInstaller"
-	finalizer       = "packageinstaller.pkg.kform.dev/finalizer"
+	finalizer       = "packageinstaller.pkg.pkgserver.dev/finalizer"
 	// errors
 	errGetCr            = "cannot get cr"
 	errUpdateStatus     = "cannot update status"
@@ -59,8 +59,8 @@ const (
 	gitopsNamespace     = "config-management-system"
 )
 
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagerevision,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagerevision/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision/status,verbs=get;update;patch
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, c interface{}) (map[schema.GroupVersionKind]chan event.GenericEvent, error) {

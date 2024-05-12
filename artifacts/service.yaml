@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pkg-server
+  namespace: pkg-system
+spec:
+  ports:
+  - port: 6444
+    protocol: TCP
+    targetPort: 6444
+  selector:
+    pkg-server: "true"

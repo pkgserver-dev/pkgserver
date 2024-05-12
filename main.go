@@ -37,7 +37,7 @@ import (
 
 const (
 	cacheDir              = "/cache"
-	defaultEtcdPathPrefix = "/registry/pkg.kform.dev"
+	defaultEtcdPathPrefix = "/registry/pkg.pkgserver.dev"
 )
 
 func main() {

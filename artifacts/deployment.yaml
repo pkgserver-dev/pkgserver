@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pkg-server
+  namespace: pkg-system
+  labels:
+    pkg-server: "true"
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      pkg-server: "true"
+  template:
+    metadata:
+      labels:
+        pkg-server: "true"
+    spec:
+      serviceAccountName: pkg-server
+      containers:
+      - name: pkg-server
+        image: europe-docker.pkg.dev/srlinux/eu.gcr.io/pkg-server:latest
+        imagePullPolicy: Always
+        command:
+        - /app/pkg-server
+        args:
+        - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
+        - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-path=-"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        - "--secure-port=6444"
+        - "--etcd-servers=https://127.0.0.1:2379"
+        - "--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt"
+        - "--etcd-keyfile=/etc/kubernetes/pki/etcd/peer.key"
+        - "--etcd-certfile=/etc/kubernetes/pki/etcd/peer.crt"
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: "NODE_NAME"
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: "NODE_IP"
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: ENABLE_REPOSITORY
+          value: "true"
+        - name: ENABLE_PACKAGEREVISION
+          value: "true"
+        - name: ENABLE_PACKAGEVARIANT
+          value: "true"
+        - name: ENABLE_PACKAGEDISCOVERY
+          value: "true"
+        - name: ENABLE_PACKAGESCHEDULER
+          value: "true"
+        - name: ENABLE_PACKAGEPROCESSOR
+          value: "true"
+        - name: ENABLE_PACKAGEAPPROVAL
+          value: "true"
+        - name: ENABLE_PACKAGEINSTALLER
+          value: "true"
+        - name: KFORM_PROVIDER_KUBERNETES
+          value: providers/kform-provider-kubernetes
+        volumeMounts:
+        - name: apiserver-certs
+          mountPath: /apiserver.local.config/certificates
+          readOnly: true
+        - name: cache
+          mountPath: /cache
+        - mountPath: /etc/kubernetes/pki/etcd # etcd
+          name: etcd-certs
+          readOnly: true
+      hostNetwork: true # specific for etcd
+      volumes:
+      - name: apiserver-certs
+        secret:
+          secretName: pkg-server
+      - name: cache # specific for git cache
+        emptyDir:
+          sizeLimit: 10Gi
+      - hostPath: # specific for etcd
+          path: /etc/kubernetes/pki/etcd
+          type: DirectoryOrCreate
+        name: etcd-certs

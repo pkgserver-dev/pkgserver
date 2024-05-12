@@ -46,15 +46,15 @@ const (
 	controllerName = "PackageApprovalController"
 	//controllerEventError = "PkgRevInstallerError"
 	controllerEvent = "PackageApproval"
-	finalizer       = "packageapproval.pkg.kform.dev/finalizer"
+	finalizer       = "packageapproval.pkg.pkgserver.dev/finalizer"
 	// errors
 	errGetCr            = "cannot get cr"
 	errUpdateStatus     = "cannot update status"
 	controllerCondition = condition.ReadinessGate_PkgApprove
 )
 
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagerevision,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagerevision/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision/status,verbs=get;update;patch
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, c interface{}) (map[schema.GroupVersionKind]chan event.GenericEvent, error) {

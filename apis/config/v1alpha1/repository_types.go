@@ -82,7 +82,7 @@ type RepositoryStatus struct {
 // +kubebuilder:printcolumn:name="DEPLOYMENT",type=boolean,JSONPath=`.spec.deployment`
 // +kubebuilder:printcolumn:name="TYPE",type=string,JSONPath=`.spec.type`
 // +kubebuilder:printcolumn:name="ADDRESS",type=string,JSONPath=`.spec['git','oci']['url','registry']`
-// +kubebuilder:resource:categories={kform,pkg}
+// +kubebuilder:resource:categories={pkg}
 // Repository is the Repository for the Repository API
 // +k8s:openapi-gen=true
 type Repository struct {

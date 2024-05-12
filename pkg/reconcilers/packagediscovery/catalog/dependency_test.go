@@ -64,11 +64,11 @@ func TestDependencyResolve(t *testing.T) {
 		"Normal": {
 			paths: []string{
 				"test_data/apiservice.yaml",
-				"test_data/config.pkg.kform.dev_packagevariants.yaml",
+				"test_data/config.pkg.pkgserver.dev_packagevariants.yaml",
 				"test_data/deployment.yaml",
 				"test_data/rbac-cluster-role-controller-permissions.yaml",
 			},
-			expectedGroup:    "pkg.kform.dev",
+			expectedGroup:    "pkg.pkgserver.dev",
 			expectedVersion:  "v1alpha1",
 			expectedKind:     APIServiceName,
 			expectedResource: APIServiceName,
@@ -111,12 +111,12 @@ func TestDependencyResolve(t *testing.T) {
 			Versions: map[string][]string{
 				"v1": {},
 			}})
-		catalogAPIStore.Create(ctx, getKey("config.pkg.kform.dev", "Repository"), &API{
+		catalogAPIStore.Create(ctx, getKey("config.pkg.pkgserver.dev", "Repository"), &API{
 			Type: APIType_Core,
 			Versions: map[string][]string{
 				"v1alpha1": {},
 			}})
-		catalogAPIStore.Create(ctx, getKey("config.pkg.kform.dev", "PackageVariant"), &API{
+		catalogAPIStore.Create(ctx, getKey("config.pkg.pkgserver.dev", "PackageVariant"), &API{
 			Type: APIType_Core,
 			Versions: map[string][]string{
 				"v1alpha1": {},
@@ -141,12 +141,12 @@ func TestDependencyResolve(t *testing.T) {
 			Versions: map[string][]string{
 				"v1alpha1": {},
 			}})
-		catalogAPIStore.Create(ctx, getKey("pkg.kform.dev", "PackageRevision"), &API{
+		catalogAPIStore.Create(ctx, getKey("pkg.pkgserver.dev", "PackageRevision"), &API{
 			Type: APIType_Core,
 			Versions: map[string][]string{
 				"v1alpha1": {},
 			}})
-		catalogAPIStore.Create(ctx, getKey("pkg.kform.dev", "PackageRevisionResource"), &API{
+		catalogAPIStore.Create(ctx, getKey("pkg.pkgserver.dev", "PackageRevisionResource"), &API{
 			Type: APIType_Core,
 			Versions: map[string][]string{
 				"v1alpha1": {},
@@ -155,10 +155,10 @@ func TestDependencyResolve(t *testing.T) {
 		catalogGRMap.Create(ctx, getKey("", "namespaces"), "Namespace")
 		catalogGRMap.Create(ctx, getKey("", "secrets"), "Secret")
 		catalogGRMap.Create(ctx, getKey("", "events"), "Event")
-		catalogGRMap.Create(ctx, getKey("config.pkg.kform.dev", "repositories"), "Repository")
-		catalogGRMap.Create(ctx, getKey("config.pkg.kform.dev", "packagevariants"), "PackageVariant")
-		catalogGRMap.Create(ctx, getKey("pkg.kform.dev", "packagerevisions"), "PackageRevision")
-		catalogGRMap.Create(ctx, getKey("pkg.kform.dev", "packagerevisionresources"), "PackageRevisionResource")
+		catalogGRMap.Create(ctx, getKey("config.pkg.pkgserver.dev", "repositories"), "Repository")
+		catalogGRMap.Create(ctx, getKey("config.pkg.pkgserver.dev", "packagevariants"), "PackageVariant")
+		catalogGRMap.Create(ctx, getKey("pkg.pkgserver.dev", "packagerevisions"), "PackageRevision")
+		catalogGRMap.Create(ctx, getKey("pkg.pkgserver.dev", "packagerevisionresources"), "PackageRevisionResource")
 		catalogGRMap.Create(ctx, getKey("admissionregistration.k8s.io", "mutatingwebhookconfigurations"), "MutatingWebhookConfiguration")
 		catalogGRMap.Create(ctx, getKey("admissionregistration.k8s.io", "validatingwebhookconfigurations"), "ValidatingWebhookConfiguration")
 		catalogGRMap.Create(ctx, getKey("flowcontrol.apiserver.k8s.io", "flowschemas"), "FlowSchema")

@@ -74,14 +74,14 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 	}{
 		"apiService": {
 			path:             "test_data/apiservice.yaml",
-			expectedGroup:    "pkg.kform.dev",
+			expectedGroup:    "pkg.pkgserver.dev",
 			expectedVersion:  "v1alpha1",
 			expectedKind:     APIServiceName,
 			expectedResource: APIServiceName,
 		},
 		"crd": {
-			path:             "test_data/config.pkg.kform.dev_packagevariants.yaml",
-			expectedGroup:    "config.pkg.kform.dev",
+			path:             "test_data/config.pkg.pkgserver.dev_packagevariants.yaml",
+			expectedGroup:    "config.pkg.pkgserver.dev",
 			expectedVersion:  "v1alpha1",
 			expectedKind:     "PackageVariant",
 			expectedResource: "packagevariants",

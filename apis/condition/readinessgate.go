@@ -17,11 +17,11 @@ limitations under the License.
 package condition
 
 const (
-	ReadinessGate_PkgSchedule ConditionType = "pkg.kform.dev/schedule"
-	ReadinessGate_PkgProcess  ConditionType = "pkg.kform.dev/process"
-	ReadinessGate_PkgPolicy   ConditionType = "pkg.kform.dev/policy"
-	ReadinessGate_PkgApprove  ConditionType = "pkg.kform.dev/approve"
-	ReadinessGate_PkgInstall  ConditionType = "pkg.kform.dev/install"
+	ReadinessGate_PkgSchedule ConditionType = "pkg.pkgserver.dev/schedule"
+	ReadinessGate_PkgProcess  ConditionType = "pkg.pkgserver.dev/process"
+	ReadinessGate_PkgPolicy   ConditionType = "pkg.pkgserver.dev/policy"
+	ReadinessGate_PkgApprove  ConditionType = "pkg.pkgserver.dev/approve"
+	ReadinessGate_PkgInstall  ConditionType = "pkg.pkgserver.dev/install"
 )
 
 // +k8s:openapi-gen=true

@@ -82,7 +82,7 @@ type PackageVariantStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 
-// +kubebuilder:resource:categories={kform,pkg}
+// +kubebuilder:resource:categories={pkg}
 // PackageVariant is the PackageVariant for the PackageVariant API
 // +k8s:openapi-gen=true
 type PackageVariant struct {

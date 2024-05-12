@@ -48,14 +48,14 @@ func init() {
 
 const (
 	controllerName = "PackageVariantController"
-	finalizer      = "packagevariant.pkg.kform.dev/finalizer"
+	finalizer      = "packagevariant.pkg.pkgserver.dev/finalizer"
 	// errors
 	errGetCr        = "cannot get cr"
 	errUpdateStatus = "cannot update status"
 )
 
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagevariant,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkg.kform.dev,resources=packagevariant/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagevariant,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagevariant/status,verbs=get;update;patch
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, c interface{}) (map[schema.GroupVersionKind]chan event.GenericEvent, error) {

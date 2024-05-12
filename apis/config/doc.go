@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package,register
-// +groupName=config.pkg.kform.dev
+// +groupName=config.pkg.pkgserver.dev
 
 // v1alpha1 is the v1alpha1 version of the API.
 package config 

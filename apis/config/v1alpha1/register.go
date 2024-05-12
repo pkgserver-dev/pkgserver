@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // +kubebuilder:object:generate=true
-// +groupName=config.pkg.kform.dev
+// +groupName=config.pkg.pkgserver.dev
 package v1alpha1
 
 import (
