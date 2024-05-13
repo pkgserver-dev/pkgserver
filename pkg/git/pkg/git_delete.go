@@ -41,16 +41,19 @@ func (r *gitRepository) DeletePackageRevision(ctx context.Context, pkgRev *pkgv1
 			}
 		}
 		// TBD: do we need an option to delete the pkgWorkspace branch ? Prefer not to do this.
-		wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
-		if wsPkgBranchRef, err := r.repo.Repo.Reference(wsPkgRefName, true); err != nil {
-			return err
-		} else {
-			if err := r.deleteRef(ctx, wsPkgBranchRef); err != nil {
-				if !strings.Contains(err.Error(), "reference not found") {
-					return err
+		// NOT needed when we commit to main
+		/*
+			wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
+			if wsPkgBranchRef, err := r.repo.Repo.Reference(wsPkgRefName, true); err != nil {
+				return err
+			} else {
+				if err := r.deleteRef(ctx, wsPkgBranchRef); err != nil {
+					if !strings.Contains(err.Error(), "reference not found") {
+						return err
+					}
 				}
 			}
-		}
+		*/
 		return nil
 	} else {
 		// TBD: do we need an option to retain the pkgWorkspace branch ?

@@ -42,7 +42,7 @@ require (
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/resource v0.0.0-20231228040228-cf28542fa2c6
 	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
-	github.com/kform-dev/kform v0.0.3-0.20240512164210-e8e46f2c67ed
+	github.com/kform-dev/kform v0.0.6-0.20240513152618-5972fa47f689
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5

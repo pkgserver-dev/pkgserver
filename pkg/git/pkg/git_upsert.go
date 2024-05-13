@@ -259,7 +259,7 @@ func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.Pa
 	log := log.FromContext(ctx)
 	// check if the workspaceBranch still exists
 	branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
-	_, err := r.repo.Repo.Reference(branchRefName, true)
+	refName, err := r.repo.Repo.Reference(branchRefName, true)
 	if err == nil {
 		// the branch exists we execute the following things
 		// get Resources from workspace branch -> we use the true flag to indicate to use
@@ -310,13 +310,22 @@ func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.Pa
 				return err
 			}
 		}
+
+		if err := r.deleteRef(ctx, refName); err != nil {
+			if !strings.Contains(err.Error(), "reference not found") {
+				return err
+			}
+		}
+
 		return nil
 	}
 
 	return nil
 }
 
-// pushTag used when not commiting to main, just tagging the workspaceName
+// DO NOT DELETE
+// pushTag was used when not committing to main, but just tagging the branch
+/*
 func (r *gitRepository) pushTag(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
 	log := log.FromContext(ctx)
 	pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
@@ -366,6 +375,7 @@ func (r *gitRepository) pushTag(ctx context.Context, pkgRev *pkgv1alpha1.Package
 	}
 	return nil
 }
+*/
 
 // deleteRef deletes branches or tags in git
 func (r *gitRepository) deleteRef(ctx context.Context, ref *plumbing.Reference) error {
