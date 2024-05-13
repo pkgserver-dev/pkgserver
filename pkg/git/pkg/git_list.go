@@ -105,7 +105,7 @@ func (r *gitRepository) getTaggedPackage(ctx context.Context, tagRef *plumbing.R
 		log.Debug("ignored package not in directory", "packageName", packageName, "dir", r.cr.GetDirectory())
 		return nil
 	}
-	log.Debug("getTaggedPackage", "packageName", packageName, "revision", revision, "tagRef name", tagRef.String())
+	log.Info("getTaggedPackage", "packageName", packageName, "revision", revision, "tagRef name", tagRef.String())
 
 	ws, commit, err := r.getBranchAndCommitFromTag(ctx, packageName, tagRef)
 	if err != nil {
@@ -122,7 +122,7 @@ func (r *gitRepository) getTaggedPackage(ctx context.Context, tagRef *plumbing.R
 		log.Info("package not found", "name", name)
 		return nil
 	}
-	
+
 	return krmPackage.buildPackageRevision(ctx, r.cr.Spec.Deployment, revision, ws, commit)
 }
 
@@ -137,8 +137,8 @@ func (r *gitRepository) getBranchAndCommitFromTag(ctx context.Context, packageNa
 }
 
 func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packageName string, hash plumbing.Hash) (string, *object.Commit, error) {
-	log := log.FromContext(ctx)
-	log.Debug("getBranchAndCommitFromHash")
+	log := log.FromContext(ctx).With("packageName", packageName, "Hash", hash.String())
+	log.Info("getBranchAndCommitFromHash")
 
 	refs, err := r.repo.Repo.References()
 	if err != nil {
@@ -148,30 +148,50 @@ func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packa
 	var tagCommit *object.Commit
 	var ws string
 	if err = refs.ForEach(func(ref *plumbing.Reference) error {
+		log.Info("getBranchAndCommitFromHash", "refName", ref.Name(), "mainBranch", r.branch, "hash", ref.Hash().String())
 		if isBranchInLocalRepo(ref.Name()) {
-			if !strings.Contains(ref.Name().String(), packageName) {
-				// the tag and branch dont match
-				return nil
-			}
-			// check the commits for this branch
-			commits, err := r.repo.Repo.Log(&git.LogOptions{From: ref.Hash()})
-			if err != nil {
-				return err
-			}
-			for {
-				commit, err := commits.Next()
+			// we only look for local packages -> branch is in the local repo (could be main or a workspace branch)
+			// packages in the main branch are revision controlled/released -> catalog/deployment
+			// packages in the worksapce branch are being worked on -> deployment
+			if isMainBranch(ref.Name(), string(r.branch)) {
+				// main branch
+				log.Info("getBranchAndCommitFromHash main branch")
+				commit, err := r.repo.Repo.CommitObject(hash)
 				if err != nil {
-					break
+					log.Error("getBranchAndCommitFromHash cannot get commit from hash for main", "hash", hash.String(), "err", err.Error())
+					return err
 				}
-				log.Debug("getBranchAndCommitFromHash does branches match", "tagHash", hash.String(), "commitHash", commit.Hash.String())
-				if commit.Hash.String() == hash.String() {
-					parts := strings.Split(ref.Name().String(), "/")
-					ws = parts[len(parts)-1]
-					tagCommit = commit
-					return storer.ErrStop // stops the iterator
+				parts := strings.Split(ref.Name().String(), "/")
+				ws = parts[len(parts)-1]
+				tagCommit = commit
+				return storer.ErrStop // stops the iterator
+			}
+
+			if strings.Contains(ref.Name().String(), packageName) {
+				// workspace branch
+				// check the commits for this branch
+				commits, err := r.repo.Repo.Log(&git.LogOptions{From: ref.Hash()})
+				if err != nil {
+					log.Error("getBranchAndCommitFromHash cannot get commits from hash", "hash", ref.Hash().String(), "err", err.Error())
+					return err
+				}
+				log.Info("getBranchAndCommitFromHash match", "hash", hash.String())
+				for {
+					commit, err := commits.Next()
+					if err != nil {
+						break
+					}
+					log.Info("getBranchAndCommitFromHash does branches match", "tagHash", hash.String(), "commitHash", commit.Hash.String())
+					if commit.Hash.String() == hash.String() {
+						parts := strings.Split(ref.Name().String(), "/")
+						ws = parts[len(parts)-1]
+						tagCommit = commit
+						return storer.ErrStop // stops the iterator
+					}
 				}
 			}
 		}
+
 		return nil
 	}); err != nil {
 		return "", nil, err

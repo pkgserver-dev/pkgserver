@@ -9,7 +9,7 @@ REPO = github.com/pkgserver-dev/pkgserver
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.15.0
 KFORM ?= $(LOCALBIN)/kform
-KFORM_VERSION ?= v0.0.4
+KFORM_VERSION ?= v0.0.5
 
 .PHONY: codegen fix fmt vet lint test tidy
 
@@ -20,7 +20,7 @@ all: codegen fmt vet lint test tidy
 .PHONY:
 build:
 	mkdir -p bin
-	CGO_ENABLED=0 ${GOBIN} build -o bin/pkgctl cmd/pkgctl/main.go 
+	CGO_ENABLED=0 ${GOBIN} build -o $(LOCALBIN)/pkgctl cmd/pkgctl/main.go 
 
 .PHONY:
 docker:

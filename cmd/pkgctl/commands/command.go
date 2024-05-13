@@ -33,22 +33,15 @@ func GetMain(ctx context.Context) *cobra.Command {
 	//showVersion := false
 	cmd := &cobra.Command{
 		Use:          "pkgctl",
-		Short:        "pkgctl is a pkg management tool",
-		Long:         "pkgctl is a pkg management tool",
+		Short:        "pkgctl is a cli tool for pkg management",
+		Long:         "pkgctl is a cli tool for pkg management",
 		SilenceUsage: true,
 		// We handle all errors in main after return from cobra so we can
 		// adjust the error message coming from libraries
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// initialize viper
-			// ensure the viper config directory exists
-			//cobra.CheckErr(fsys.EnsureDir(ctx, xdg.ConfigHome, defaultConfigFileSubDir))
 			// initialize viper settings
 			initConfig()
-			// create package store if it does not exist
-			//_, err := store.New(cmd.Context(),
-			//	filepath.Join(xdg.ConfigHome, defaultConfigFileSubDir, defaultDBPath))
-			//return err
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

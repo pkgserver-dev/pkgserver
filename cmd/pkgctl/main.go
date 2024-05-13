@@ -27,11 +27,6 @@ import (
 	"github.com/henderiw/logger/log"
 )
 
-const (
-	//defaultConfigFileSubDir = "pkgctl"
-	//defaultConfigFileName   = "pkgctl.yaml"
-)
-
 func main() {
 	os.Exit(runMain())
 }

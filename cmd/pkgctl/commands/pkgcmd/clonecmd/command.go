@@ -87,7 +87,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 			Secret:     repo.Secret,
 			Deployment: repo.Deployment,
 			Directory:  repo.Directory,
-			//PkgID:      pkgID,
+			PkgID:      pkgID,
 			PkgPath:    dir,
 		}
 		datastore, err := reader.Read(ctx)

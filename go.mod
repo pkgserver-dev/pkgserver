@@ -41,7 +41,7 @@ require (
 	github.com/henderiw/apiserver-store v0.0.0-20240419050621-a69e6046534c
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/resource v0.0.0-20231228040228-cf28542fa2c6
-	github.com/henderiw/store v0.0.0-20240311135319-eb32ab80594b
+	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
 	github.com/kform-dev/kform v0.0.3-0.20240512164210-e8e46f2c67ed
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0

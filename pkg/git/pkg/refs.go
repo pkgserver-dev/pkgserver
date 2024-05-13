@@ -79,6 +79,12 @@ func (b TagName) TagInRemote() plumbing.ReferenceName {
 	return plumbing.ReferenceName(tagsPrefixInRemoteRepo + string(b))
 }
 
+func isMainBranch(n plumbing.ReferenceName, branch string) bool {
+	fmt.Println("isRepoBranch ref", n.String())
+	fmt.Println("mainBranch ref", fmt.Sprintf("%s%s", branchPrefixInLocalRepo, branch))
+	return n.String() == fmt.Sprintf("%s%s", branchPrefixInLocalRepo, branch)
+}
+
 func isBranchInLocalRepo(n plumbing.ReferenceName) bool {
 	return strings.HasPrefix(n.String(), branchPrefixInLocalRepo)
 }
