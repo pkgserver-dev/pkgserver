@@ -24,6 +24,7 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/resource"
+	"github.com/pkg/errors"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
@@ -33,7 +34,6 @@ import (
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
 	"github.com/pkgserver-dev/pkgserver/pkg/repository"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -329,7 +329,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if cr.GetCondition(condition.ConditionTypeReady).Status != v1.ConditionTrue {
 			switch cr.Spec.Tasks[0].Type {
 			case pkgv1alpha1.TaskTypeClone:
-
 				_, cachedRepo, err := r.getRepo(ctx, cr)
 				if err != nil {
 					//log.Error("cannot approve packagerevision", "error", err)
@@ -373,11 +372,29 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					}
 				*/
 			case pkgv1alpha1.TaskTypeInit:
-				msg := fmt.Sprintf("unsupported taskType: %s", string(cr.Spec.Tasks[0].Type))
-				cr.SetConditions(condition.Failed(msg))
-				r.recorder.Eventf(cr, corev1.EventTypeWarning,
-					"Error", msg)
-				return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+				_, cachedRepo, err := r.getRepo(ctx, cr)
+				if err != nil {
+					//log.Error("cannot approve packagerevision", "error", err)
+					cr.SetConditions(condition.Failed(err.Error()))
+					r.recorder.Eventf(cr, corev1.EventTypeWarning,
+						"Error", "error %s", err.Error())
+					return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+				}
+				if err := cachedRepo.UpsertPackageRevision(ctx, cr, map[string]string{}); err != nil {
+					log.Error("cannot update packagerevision", "error", err)
+					cr.SetConditions(condition.Failed(err.Error()))
+					r.recorder.Eventf(cr, corev1.EventTypeWarning,
+						"Error", "error %s", err.Error())
+					return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+				}
+
+				/*
+					msg := fmt.Sprintf("unsupported taskType: %s", string(cr.Spec.Tasks[0].Type))
+					cr.SetConditions(condition.Failed(msg))
+					r.recorder.Eventf(cr, corev1.EventTypeWarning,
+						"Error", msg)
+					return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+				*/
 			default:
 				msg := fmt.Sprintf("unsupported taskType: %s", string(cr.Spec.Tasks[0].Type))
 				cr.SetConditions(condition.Failed(msg))

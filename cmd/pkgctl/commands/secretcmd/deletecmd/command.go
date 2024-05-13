@@ -7,13 +7,14 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/henderiw/logger/log"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "delete NAME",
@@ -27,19 +28,19 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
-	r.k8s = k8s
+	r.local = *pkgctlcfg.Local
 
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, k8s).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
 }
 
 type Runner struct {
 	Command *cobra.Command
 	cfg     *genericclioptions.ConfigFlags
-	k8s     bool
+	local   bool
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
@@ -48,7 +49,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	log.Debug("delete secret")
 
 	secretName := args[0]
-	if !r.k8s {
+	if r.local {
 
 		delete(viper.Get("secrets").(map[string]interface{}), secretName)
 

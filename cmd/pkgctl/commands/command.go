@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/pkgcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/secretcmd"
@@ -52,17 +53,19 @@ func GetMain(ctx context.Context) *cobra.Command {
 			if h {
 				return cmd.Help()
 			}
+
 			return cmd.Usage()
 		},
 	}
 
-	pf := cmd.PersistentFlags()
+	//pf := cmd.PersistentFlags()
+	
 
 	kubeflags := genericclioptions.NewConfigFlags(true)
-	kubeflags.AddFlags(pf)
+	kubeflags.AddFlags(cmd.PersistentFlags())
 
-	var k8s bool
-	cmd.Flags().BoolVarP(&k8s, "k8s", "k", false, "when set to true execute the command on the k8s cluster, otherwise it is execute locally")
+	pkgctlflags := apis.NewConfigFlags(true)
+	pkgctlflags.AddFlags(cmd.PersistentFlags())
 
 	kubeflags.WrapConfigFn = func(rc *rest.Config) *rest.Config {
 		rc.UserAgent = fmt.Sprintf("pkg/%s", version)
@@ -74,9 +77,9 @@ func GetMain(ctx context.Context) *cobra.Command {
 	// initialize viper settings
 	initConfig()
 
-	cmd.AddCommand(pkgcmd.GetCommand(ctx, version, kubeflags, k8s))
-	cmd.AddCommand(secretcmd.GetCommand(ctx, version, kubeflags, k8s))
-	cmd.AddCommand(repocmd.GetCommand(ctx, version, kubeflags, k8s))
+	cmd.AddCommand(pkgcmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
+	cmd.AddCommand(secretcmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
+	cmd.AddCommand(repocmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
 	//cmd.PersistentFlags().StringVar(&configFile, "config", "c", fmt.Sprintf("Default config file (%s/%s/%s.%s)", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt))
 
 	return cmd

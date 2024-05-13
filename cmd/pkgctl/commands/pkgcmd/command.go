@@ -5,6 +5,7 @@ import (
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/pkgcmd/approvecmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/pkgcmd/clonecmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/pkgcmd/createcmd"
@@ -20,7 +21,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func GetCommand(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
+func GetCommand(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "pkg",
 		//Short:   docs.InitShort,
@@ -39,16 +40,16 @@ func GetCommand(ctx context.Context, version string, cfg *genericclioptions.Conf
 	}
 
 	cmd.AddCommand(
-		approvecmd.NewCommand(ctx, version, cfg, k8s),
-		clonecmd.NewCommand(ctx, version, cfg, k8s),
-		createcmd.NewCommand(ctx, version, cfg, k8s),
-		deletecmd.NewCommand(ctx, version, cfg, k8s),
-		draftcmd.NewCommand(ctx, version, cfg, k8s),
-		getcmd.NewCommand(ctx, version, cfg, k8s),
-		listcmd.NewCommand(ctx, version, cfg, k8s),
-		proposecmd.NewCommand(ctx, version, cfg, k8s),
-		proposedeletecmd.NewCommand(ctx, version, cfg, k8s),
-		pushcmd.NewCommand(ctx, version, cfg, k8s),
+		approvecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		clonecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		createcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		deletecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		draftcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		getcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		listcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		proposecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		proposedeletecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		pushcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
 	)
 	return cmd
 }

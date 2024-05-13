@@ -5,6 +5,7 @@ import (
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd/createcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd/deletecmd"
 	"github.com/spf13/cobra"
@@ -12,7 +13,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func GetCommand(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
+func GetCommand(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "repo",
 		//Short:   docs.InitShort,
@@ -31,8 +32,8 @@ func GetCommand(ctx context.Context, version string, cfg *genericclioptions.Conf
 	}
 
 	cmd.AddCommand(
-		createcmd.NewCommand(ctx, version, cfg, k8s),
-		deletecmd.NewCommand(ctx, version, cfg, k8s),
+		createcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		deletecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
 	)
 	return cmd
 }

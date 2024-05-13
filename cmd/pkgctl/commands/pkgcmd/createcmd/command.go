@@ -8,6 +8,7 @@ import (
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,11 +16,11 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "create PKGREV[<Target>.<REPO>.<REALM>.<PACKAGE>.<WORKSPACE>] [flags]",
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(1),
 		//Short:   docs.InitShort,
 		//Long:    docs.InitShort + "\n" + docs.InitLong,
 		//Example: docs.InitExamples,
@@ -29,6 +30,7 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
+	r.local = *pkgctlcfg.Local
 
 	r.Command.Flags().StringVar(
 		&r.source, "src", "", "source from which the pkg should be cloned")
@@ -36,8 +38,8 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, k8s).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
 }
 
 type Runner struct {
@@ -45,14 +47,20 @@ type Runner struct {
 	cfg     *genericclioptions.ConfigFlags
 	client  client.Client
 	source  string
+	local   bool
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
-	client, err := client.CreateClientWithFlags(r.cfg)
-	if err != nil {
-		return err
+	if !r.local {
+		client, err := client.CreateClientWithFlags(r.cfg)
+		if err != nil {
+			return err
+		}
+		r.client = client
+	} else {
+		return fmt.Errorf("this command only excecutes on k8s, got: %t", r.local)
 	}
-	r.client = client
+
 	return nil
 }
 
@@ -89,9 +97,15 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		pkgv1alpha1.PackageRevisionSpec{
 			PackageID: *dstPkgID,
 			Lifecycle: pkgv1alpha1.PackageRevisionLifecycleDraft,
+			Tasks: []pkgv1alpha1.Task{
+				{
+					Type: pkgv1alpha1.TaskTypeInit,
+				},
+			},
 		},
 		pkgv1alpha1.PackageRevisionStatus{},
 	)
+
 	if srcPkgID != nil {
 		pkgRev = pkgv1alpha1.BuildPackageRevision(
 			metav1.ObjectMeta{

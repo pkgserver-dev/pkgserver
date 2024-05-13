@@ -6,6 +6,7 @@ import (
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,7 +14,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "propose-delete PKGREV [flags]",
@@ -27,21 +28,19 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
-	/*
-		r.Command.Flags().StringVar(
-			&r.FnConfigDir, "fn-config-dir", "", "dir where the function config files are located")
-	*/
+	r.local = *pkgctlcfg.Local
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, k8s).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
 }
 
 type Runner struct {
 	Command *cobra.Command
 	cfg     *genericclioptions.ConfigFlags
 	client  client.Client
+	local   bool
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {

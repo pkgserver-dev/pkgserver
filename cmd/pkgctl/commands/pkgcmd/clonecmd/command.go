@@ -8,15 +8,19 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/kform-dev/kform/pkg/pkgio"
+	"github.com/pkgserver-dev/pkgserver/apis/condition"
+	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
+	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, k8s bool) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "clone PKGREV[<Target>.<REPO>.<REALM>.<PACKAGE>.<WORKSPACE>] [LOCAL_DST_DIRECTORY] [flags]",
@@ -25,28 +29,40 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 		//Short:   docs.InitShort,
 		//Long:    docs.InitShort + "\n" + docs.InitLong,
 		//Example: docs.InitExamples,
-		//PreRunE: r.preRunE,
-		RunE: r.runE,
+		PreRunE: r.preRunE,
+		RunE:    r.runE,
 	}
 
 	r.Command = cmd
 	r.cfg = cfg
-	r.k8s = k8s
+	r.local = *pkgctlcfg.Local
 	r.Command.Flags().StringVar(
 		&r.revision, "revision", "", "revision of the package to be cloned")
 
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, k8s bool) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, k8s).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
 }
 
 type Runner struct {
 	Command  *cobra.Command
 	cfg      *genericclioptions.ConfigFlags
+	client   client.Client
 	revision string
-	k8s      bool
+	local      bool
+}
+
+func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
+	if !r.local {
+		client, err := client.CreateClientWithFlags(r.cfg)
+		if err != nil {
+			return err
+		}
+		r.client = client
+	}
+	return nil
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
@@ -64,7 +80,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		dir = args[2]
 	}
 
-	if !r.k8s {
+	if r.local {
 		repoName := pkgID.Repository
 		var repo apis.Repo
 		if err := viper.UnmarshalKey(fmt.Sprintf("repos.%s", repoName), &repo); err != nil {
@@ -101,8 +117,28 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 
 		return w.Write(ctx, datastore)
 	} else {
-		// get packagerevision resources
+		r.validateUpstream(ctx, pkgID)
 		// map to the datastore and use the generic writer
 	}
 	return nil
+}
+
+func (r *Runner) validateUpstream(ctx context.Context, pkgID *pkgid.PackageID) error {
+
+	pkgRevList := pkgv1alpha1.PackageRevisionList{}
+	if err := r.client.List(ctx, &pkgRevList); err != nil {
+		return err
+	}
+
+	for _, pkgRev := range pkgRevList.Items {
+		if pkgRev.Spec.PackageID.Repository == pkgID.Repository &&
+			pkgRev.Spec.PackageID.Package == pkgID.Package &&
+			pkgRev.Spec.PackageID.Revision == pkgID.Revision {
+			if pkgRev.GetCondition(condition.ConditionTypeReady).Status == metav1.ConditionTrue {
+				return nil
+			}
+			return fmt.Errorf("pkg %s not ready", pkgRev.Name)
+		}
+	}
+	return fmt.Errorf("upstream pkg %s not found", pkgID.PkgRevString())
 }

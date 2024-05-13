@@ -20,7 +20,7 @@ all: codegen fmt vet lint test tidy
 .PHONY:
 build:
 	mkdir -p bin
-	CGO_ENABLED=0 ${GOBIN} build -o $(LOCALBIN)/pkgctl cmd/pkgctl/main.go 
+	CGO_ENABLED=0 go build -o $(GOBIN)/pkgctl cmd/pkgctl/main.go 
 
 .PHONY:
 docker:
