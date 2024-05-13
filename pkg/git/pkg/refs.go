@@ -104,6 +104,10 @@ func trimOptionalPrefix(s, prefix string) (string, bool) {
 	return "", false
 }
 
+func mainRefName(branch string) plumbing.ReferenceName {
+	return BranchName(branch).BranchInLocal()
+}
+
 func workspacePackageBranchRefName(pkgID pkgid.PackageID) plumbing.ReferenceName {
 	return packageBranchName(pkgID).BranchInLocal()
 }

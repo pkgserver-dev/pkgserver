@@ -130,7 +130,7 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 				}
 				//return apierrors.NewInternalError(err)
 			}
-			resources, err := cachedRepo.GetResources(ctx, &pkgRev)
+			resources, err := cachedRepo.GetResources(ctx, &pkgRev, false)
 			if err != nil {
 				prrChan <- prr{
 					prr: nil,
@@ -156,7 +156,7 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 	for prr := range prrChan {
 		prr := prr
 		if prr.err != nil {
-			errors.Join(errm, err)
+			errm  = errors.Join(errm, err)
 			continue
 		}
 		appendItem(v, prr.prr)

@@ -39,7 +39,8 @@ func (r *gitRepository) EnsurePackageRevision(ctx context.Context, pkgRev *pkgv1
 		return err
 	}
 	if pkgRev.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished && pkgRev.Spec.PackageID.Revision != "" {
-		return r.pushTag(ctx, pkgRev)
+		return r.commitToMain(ctx, pkgRev)
+		//return r.pushTag(ctx, pkgRev)
 	}
 	return fmt.Errorf("EnsurePackageRevision should only be used for published packages with a revision")
 }
@@ -54,30 +55,36 @@ func (r *gitRepository) UpsertPackageRevision(ctx context.Context, pkgRev *pkgv1
 
 	if pkgRev.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished {
 		// ignore resources
-		if pkgRev.Spec.PackageID.Revision != "" {
-			// validate if the pkg revision tag exists
-			pkgTagRefName := packageTagRefName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
-			if _, err := r.repo.Repo.Reference(pkgTagRefName, true); err != nil {
-				log.Error("get main pkg revision tag", "error", err)
-				return err
-			}
-		} else {
-			// allocated a revision
-			newRev, err := r.getNextRevision(pkgRev)
-			if err != nil {
-				return err
-			}
-			log.Info("next revision", "newRev", newRev)
-			// we set the revision in the spec such that this is returned to the reconciler
-			pkgRev.Spec.PackageID.Revision = newRev
 
-			// tag the package
-			//pkgTagName := packageTagName(pkgRev.Spec.Package, pkgRev.Spec.Revision)
-			if err := r.pushTag(ctx, pkgRev); err != nil {
-				return err
-			}
+		log.Error("in published mode we should not perform an update of the repo, we should use only ensurePackageRevision")
 
-		}
+		// This code is obsolete, since we never do an update when in published state
+		/*
+			if pkgRev.Spec.PackageID.Revision != "" {
+				// validate if the pkg revision tag exists
+				pkgTagRefName := packageTagRefName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
+				if _, err := r.repo.Repo.Reference(pkgTagRefName, true); err != nil {
+					log.Error("get main pkg revision tag", "error", err)
+					return err
+				}
+			} else {
+				// allocated a revision
+				newRev, err := r.getNextRevision(pkgRev)
+				if err != nil {
+					return err
+				}
+				log.Info("next revision", "newRev", newRev)
+				// we set the revision in the spec such that this is returned to the reconciler
+				pkgRev.Spec.PackageID.Revision = newRev
+
+				// tag the package
+				//pkgTagName := packageTagName(pkgRev.Spec.Package, pkgRev.Spec.Revision)
+				if err := r.pushTag(ctx, pkgRev); err != nil {
+					return err
+				}
+
+			}
+		*/
 	} else {
 		// create the workspace package branch if it does not exist
 		// based on the strategy we can use various parent commits
@@ -95,10 +102,21 @@ func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageR
 	log := log.FromContext(ctx)
 	// get the parent commit
 	// could be either the head of the main branch or the latest pkg revision
-	parentCommit, commitMsg, err := r.getParentCommit(ctx, pkgRev)
-	if err != nil {
-		return plumbing.ZeroHash, err
+	var parentCommit *object.Commit
+	var commitMsg string
+	var err error
+	if pkgRev.Spec.PackageID.Revision == "" {
+		parentCommit, commitMsg, err = r.getParentCommit(ctx, pkgRev)
+		if err != nil {
+			return plumbing.ZeroHash, err
+		}
+	} else {
+		parentCommit, commitMsg, err = r.getHeadCommit(ctx, pkgRev)
+		if err != nil {
+			return plumbing.ZeroHash, err
+		}
 	}
+
 	// get the commit helper, the packageTree Hash allows to add the resources of the
 	// parent package if this is the strategy that was adopted
 	ch := newCommithelper(r.repo.Repo, parentCommit)
@@ -127,8 +145,12 @@ func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageR
 		return plumbing.ZeroHash, fmt.Errorf("failed to commit package: %w", err)
 	}
 
-	wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
-	localRef := plumbing.NewHashReference(wsPkgRefName, commitHash)
+	refName := workspacePackageBranchRefName(pkgRev.Spec.PackageID) // normally the workspace name
+	if pkgRev.Spec.PackageID.Revision != "" {
+		refName = mainRefName(string(r.branch)) // when the package revision is
+	}
+
+	localRef := plumbing.NewHashReference(refName, commitHash)
 
 	// push the commit to the remote
 	refSpecs := newPushRefSpecBuilder()
@@ -147,6 +169,23 @@ func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageR
 		}
 	}
 	return commitHash, nil
+}
+
+func (r *gitRepository) getHeadCommit(_ context.Context, pkgRev *pkgv1alpha1.PackageRevision) (*object.Commit, string, error) {
+	//log := log.FromContext(ctx)
+	ref, err := r.repo.Repo.Reference(mainRefName(string(r.branch)), true)
+	if err != nil {
+		// TODO: handle empty repositories - NotFound error
+		return nil, "", err
+	}
+	parentCommit, err := r.repo.Repo.CommitObject(ref.Hash())
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitString := fmt.Sprintf("approved commit workspace %s", pkgRev.Spec.PackageID.Workspace)
+
+	return parentCommit, commitString, nil
 }
 
 func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) (*object.Commit, string, error) {
@@ -210,33 +249,74 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 	return parentCommit, commitString, nil
 }
 
-// tagExists uses the tags without refs/heads
-/*
-func (r *gitRepository) tagExists(ctx context.Context, tag string) bool {
+// commitToMain takes the data from the workspace branch and commits this to main
+// steps:
+// 1. check if the workspacebranch exists
+// 2a: workspace branch exists
+
+// 2b: workspace branch does not exists -> tag should exist
+func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
 	log := log.FromContext(ctx)
-	tagFoundErr := "tag was found"
-	tags, err := r.repo.Repo.Tags()
-	if err != nil {
-		log.Error("cannot get tags", "error", err)
-		return false
-	}
-	res := false
-	err = tags.ForEach(func(t *plumbing.Reference) error {
-		log.Info("tagExists", "existing tag", t.Name().String(), "check tag", tag)
-		if t.Name().String() == tag {
-			res = true
-			return fmt.Errorf(tagFoundErr)
+	// check if the workspaceBranch still exists
+	branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
+	_, err := r.repo.Repo.Reference(branchRefName, true)
+	if err == nil {
+		// the branch exists we execute the following things
+		// get Resources from workspace branch -> we use the true flag to indicate to use
+		// the workspacebranch iso the package revision
+		resources, err := r.GetResources(ctx, pkgRev, true)
+		if err != nil {
+			return err
+		}
+		commitHash, err := r.commit(ctx, pkgRev, resources)
+		if err != nil {
+			return err
+		}
+		pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
+		// Get the commit object from the reference.
+		commitObj, err := r.repo.Repo.CommitObject(commitHash)
+		if err != nil {
+			return err
+		}
+
+		tagRef, err := r.repo.Repo.CreateTag(string(pkgTagName), commitObj.Hash, &git.CreateTagOptions{
+			Tagger: &object.Signature{
+				Name:  commitSignatureName,
+				Email: commitSignatureEmail,
+				When:  time.Now(),
+			},
+			Message: string(pkgTagName),
+		})
+		if err != nil {
+			if !strings.Contains(err.Error(), "tag already exists") {
+				log.Error("cannot create tag", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		log.Info("create tag local", "tagRef", pkgTagName.TagInLocal().String(), "tagRef", string(pkgTagName))
+		// push the tag
+		refSpecs := newPushRefSpecBuilder()
+		// build the refs to push to the remote reference
+		refSpecs.AddRefToPush(tagRef.Name(), commitObj.Hash)
+
+		specs, require, err := refSpecs.BuildRefSpecs()
+		if err != nil {
+			return err
+		}
+		if err := r.repo.PushAndCleanup(ctx, specs, require); err != nil {
+			if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+				return err
+			}
 		}
 		return nil
-	})
-	if err != nil && err.Error() != tagFoundErr {
-		log.Error("cannot iterate tags", "error", err)
-		return false
 	}
-	return res
-}
-*/
 
+	return nil
+}
+
+// pushTag used when not commiting to main, just tagging the workspaceName
 func (r *gitRepository) pushTag(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
 	log := log.FromContext(ctx)
 	pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
@@ -252,32 +332,7 @@ func (r *gitRepository) pushTag(ctx context.Context, pkgRev *pkgv1alpha1.Package
 	if err != nil {
 		return err
 	}
-	/*
-		tag := object.Tag{
-			Name:    string(pkgTagName),
-			Message: string(pkgTagName),
-			Tagger: object.Signature{
-				Name:  commitSignatureName,
-				Email: commitSignatureEmail,
-				When:  time.Now(),
-			},
-			PGPSignature: "",
-			Target:       commitObj.Hash,
-			TargetType:   plumbing.CommitObject,
-		}
 
-		e := r.repo.Repo.Storer.NewEncodedObject()
-		tag.Encode(e)
-		hash, err := r.repo.Repo.Storer.SetEncodedObject(e)
-		if err!= nil {
-			return err
-		}
-
-		err = r.repo.Repo.Storer.SetReference(plumbing.NewReferenceFromStrings(pkgTagName.TagInLocal().String(), hash.String()))
-		if err!= nil {
-			return err
-		}
-	*/
 	tagRef, err := r.repo.Repo.CreateTag(string(pkgTagName), commitObj.Hash, &git.CreateTagOptions{
 		Tagger: &object.Signature{
 			Name:  commitSignatureName,

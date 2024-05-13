@@ -35,7 +35,7 @@ type Repository interface {
 	// DeletePackageRevision deletes the package revision in the revision backend
 	DeletePackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error
 	// used for List or Gte PackageRevisionResources
-	GetResources(ctx context.Context, pr *pkgv1alpha1.PackageRevision) (map[string]string, error)
+	GetResources(ctx context.Context, pr *pkgv1alpha1.PackageRevision, useWorkspaceBranch bool) (map[string]string, error)
 	// ensure packageRevision ensure the Packagerevision tag exists on the package revision
 	EnsurePackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error
 }

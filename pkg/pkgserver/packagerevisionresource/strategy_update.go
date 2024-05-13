@@ -69,35 +69,35 @@ func (r *strategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) 
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.packageID.target"),
 			newPkgRevResources.Spec.PackageID.Target,
-			fmt.Sprint("spec.packageID.target is immutable"),
+			"spec.packageID.target is immutable",
 		))
 	}
 	if oldPkgRevResources.Spec.PackageID.Repository != newPkgRevResources.Spec.PackageID.Repository {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.packageID.repository"),
 			newPkgRevResources.Spec.PackageID.Repository,
-			fmt.Sprint("spec.packageID.repository is immutable"),
+			"spec.packageID.repository is immutable",
 		))
 	}
 	if oldPkgRevResources.Spec.PackageID.Package != newPkgRevResources.Spec.PackageID.Package {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.packageID.realm"),
 			newPkgRevResources.Spec.PackageID.Realm,
-			fmt.Sprint("spec.packageID.realm is immutable"),
+			"spec.packageID.realm is immutable",
 		))
 	}
 	if oldPkgRevResources.Spec.PackageID.Package != newPkgRevResources.Spec.PackageID.Package {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.packageID.package"),
 			newPkgRevResources.Spec.PackageID.Package,
-			fmt.Sprint("spec.packageID.package is immutable"),
+			"spec.packageID.package is immutable",
 		))
 	}
 	if oldPkgRevResources.Spec.PackageID.Workspace != newPkgRevResources.Spec.PackageID.Workspace {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.workspace"),
 			newPkgRevResources.Spec.PackageID.Workspace,
-			fmt.Sprint("spec.workspace is immutable"),
+			"spec.workspace is immutable",
 		))
 	}
 

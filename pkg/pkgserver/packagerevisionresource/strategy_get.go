@@ -49,7 +49,7 @@ func (r *strategy) Get(ctx context.Context, key types.NamespacedName) (runtime.O
 		return nil, apierrors.NewInternalError(err)
 	}
 	log.Info("get resources", "key", pkgRev.Name)
-	resources, err := cachedRepo.GetResources(ctx, pkgRev)
+	resources, err := cachedRepo.GetResources(ctx, pkgRev, false)
 	if err != nil {
 		log.Error("pkgRevResources cannot get resource in apiserver", "pkgRev", pkgRev, "error", err.Error())
 		return nil, apierrors.NewInternalError(err)

@@ -277,43 +277,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				// we requeue and ensure the pkg tag
 				return ctrl.Result{Requeue: true}, nil
 			}
-			/* attempt 2
-			// approval of the pkgRev
-			log.Debug("approval pkgrev", "before", cr.Spec.PackageID.Revision)
-			if err := cachedRepo.UpsertPackageRevision(ctx, cr, map[string]string{}); err != nil {
-				//log.Error("cannot approve packagerevision", "error", err)
-				cr.SetConditions(condition.Failed(err.Error()))
-				r.recorder.Eventf(cr, corev1.EventTypeWarning,
-					"Error", "error %s", err.Error())
-				return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
-			}
-			// TODO do an update because of the revision that got allocated
-			log.Debug("approval pkgrev", "after", cr.Spec.PackageID.Revision)
-			cr = cr.DeepCopy()
-			if err := r.Update(ctx, cr); err != nil {
-				//log.Error("cannot update packagerevision", "error", err)
-				cr.SetConditions(condition.Failed(err.Error()))
-				r.recorder.Eventf(cr, corev1.EventTypeWarning,
-					"Error", "error %s", err.Error())
-				return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
-			}
-			*/
-			/*
-				pkgRevResources := pkgv1alpha1.BuildPackageRevisionResources(
-					cr.ObjectMeta,
-					pkgv1alpha1.PackageRevisionResourcesSpec{
-						PackageID: *cr.Spec.PackageID.DeepCopy(),
-					}
-					pkgv1alpha1.PackageRevisionResourcesStatus{},
-				)
-				if err := r.Update(ctx, pkgRevResources); err != nil {
-					//log.Error("cannot update packagerevision", "error", err)
-					cr.SetConditions(condition.Failed(err.Error()))
-					r.recorder.Eventf(cr, corev1.EventTypeWarning,
-						"Error", "error %s", err.Error())
-					return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
-				}
-			*/
 			// ensure Tag for pkgRev in deployments
 			if deployment {
 				if err := cachedRepo.EnsurePackageRevision(ctx, cr); err != nil {

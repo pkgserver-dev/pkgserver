@@ -29,7 +29,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (r *gitRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) (map[string]string, error) {
+func (r *gitRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, useWorkspaceBranch bool) (map[string]string, error) {
 	ctx, span := tracer.Start(ctx, "gitRepository::GetResources", trace.WithAttributes())
 	defer span.End()
 	r.mu.RLock()
@@ -41,7 +41,7 @@ func (r *gitRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.Pa
 	}
 
 	log := log.FromContext(ctx)
-	commit, err := r.getCommit(ctx, pkgRev)
+	commit, err := r.getCommit(ctx, pkgRev, useWorkspaceBranch)
 	if err != nil {
 		log.Error("get resources: cannot get commit", "err", err)
 		return nil, err
@@ -81,13 +81,13 @@ func getResources(ctx context.Context, pkgID pkgid.PackageID, commit *object.Com
 	return resources, nil
 }
 
-func (r *gitRepository) getCommit(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) (*object.Commit, error) {
+func (r *gitRepository) getCommit(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, useWorkspaceBranch bool) (*object.Commit, error) {
 	log := log.FromContext(ctx)
 	log.Info("getCommit", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageID)
 	// when a revision is set there is a tag and we use the tag to lookup the commit reference
 	// there is 2 types of tags annotated tags and regular tags, depending on the type we get the
 	// commit by different means
-	if pkgRev.Spec.PackageID.Revision != "" {
+	if !useWorkspaceBranch && pkgRev.Spec.PackageID.Revision != "" {
 		tagRefName := packageTagRefName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
 		tagRef, err := r.repo.Repo.Reference(tagRefName, true)
 		if err != nil {

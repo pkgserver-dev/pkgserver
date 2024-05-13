@@ -54,6 +54,7 @@ func (r *gitRepository) getLatestRevision(ctx context.Context, pkgRev *pkgv1alph
 	return LatestRevisionNumber(pkgTags), nil
 }
 
+/*
 func (r *gitRepository) getNextRevision(pkgrev *pkgv1alpha1.PackageRevision) (string, error) {
 	tags, err := r.repo.Repo.Tags()
 	if err != nil {
@@ -72,6 +73,7 @@ func (r *gitRepository) getNextRevision(pkgrev *pkgv1alpha1.PackageRevision) (st
 	}
 	return NextRevisionNumber(pkgTags)
 }
+*/
 
 // NextRevisionNumber computes the next revision number as the latest revision number + 1.
 // This function only understands strict versioning format, e.g. v1, v2, etc. It will
