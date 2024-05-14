@@ -32,20 +32,21 @@ import (
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 func (r *reconciler) getPackageResources(ctx context.Context, cr *pkgv1alpha1.PackageRevision) (
-	[]any,
-	[]any,
-	[]any,
-	[]any,
+	[]*yaml.RNode,
+	[]*yaml.RNode,
+	[]*yaml.RNode,
+	[]*yaml.RNode,
 	error,
 ) {
 	log := log.FromContext(ctx)
-	packages := []any{}
-	resources := []any{}
-	inputs := []any{}
-	outputs := []any{}
+	packages := []*yaml.RNode{}
+	resources := []*yaml.RNode{}
+	inputs := []*yaml.RNode{}
+	outputs := []*yaml.RNode{}
 
 	/*
 		pkgRevResources, err := r.clientset.PkgV1alpha1().PackageRevisionResourceses(cr.Namespace).Get(ctx, cr.Name, v1.GetOptions{})

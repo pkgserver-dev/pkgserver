@@ -22,33 +22,39 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
 	memstore "github.com/henderiw/apiserver-store/pkg/storebackend/memory"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
+	//"sigs.k8s.io/yaml"
 )
 
-func getResources(paths []string) ([]any, error) {
-	resources := []any{}
+func getResources(paths []string) ([]*yaml.RNode, error) {
+	resources := []*yaml.RNode{}
 	for _, path := range paths {
 		b, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
-		ko, err := fn.ParseKubeObject(b)
+		rn, err := yaml.Parse(string(b))
 		if err != nil {
 			return nil, err
 		}
-		if ko == nil {
-			return nil, fmt.Errorf("cannot create a block without a kubeobject")
-		}
-		var v map[string]any
-		if err := yaml.Unmarshal([]byte(ko.String()), &v); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal the kubeobject, err: %s", err.Error())
-		}
-		resources = append(resources, v)
+		/*
+			ko, err := fn.ParseKubeObject(b)
+			if err != nil {
+				return nil, err
+			}
+			if ko == nil {
+				return nil, fmt.Errorf("cannot create a block without a kubeobject")
+			}
+			var v map[string]any
+			if err := yaml.Unmarshal([]byte(ko.String()), &v); err != nil {
+				return nil, fmt.Errorf("cannot unmarshal the kubeobject, err: %s", err.Error())
+			}
+		*/
+		resources = append(resources, rn)
 	}
 	return resources, nil
 }
@@ -166,7 +172,7 @@ func TestDependencyResolve(t *testing.T) {
 		//catalogPkgStore: memstore.NewStore[*Dependency](),
 		pkgRevRecorder := recorder.New[diag.Diagnostic]()
 		d := newDependencyResolver(pkgRevRecorder, catalogAPIStore, catalogGRMap, pkgID)
-		_ = d.resolve(ctx, []any{}, []any{}, resources)
+		_ = d.resolve(ctx, []*yaml.RNode{}, []*yaml.RNode{}, resources)
 
 		if pkgRevRecorder.Get().Error() != nil {
 			t.Errorf("%s unexpected error\n%s", name, err.Error())

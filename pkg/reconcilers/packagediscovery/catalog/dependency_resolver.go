@@ -33,7 +33,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
+	//"sigs.k8s.io/yaml"
 )
 
 type dependencyResolver struct {
@@ -72,15 +73,17 @@ func newDependencyResolver(recorder recorder.Recorder[diag.Diagnostic], catalogA
 // -> for reguler resources: lookup api based on gvk and determine if this is a core or pkg dependency
 // package resources
 // -> create an upstream package dependency
-func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, resources []any) *Dependency {
+func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, resources []*yaml.RNode) *Dependency {
 	log := log.FromContext(ctx)
 	log.Debug("resolve")
 	// input resource can identify a dependency via the claimv1alpha1.PackageDependency
 	// if so we capture this
-	for _, krmResource := range inputs {
+	for _, rn := range inputs {
 		//get apiVersion and kind from krmResource
-		apiVersion, kind := getApiVersionKind(krmResource)
-		gv, err := schema.ParseGroupVersion(apiVersion)
+		//apiVersion, kind := getApiVersionKind(krmResource)
+		apiVersion := rn.GetApiVersion()
+		kind := rn.GetKind()
+		gv, err := schema.ParseGroupVersion(rn.GetApiVersion())
 		if err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
 			continue
@@ -89,7 +92,7 @@ func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, reso
 		switch {
 		case apiVersion == claimv1alpha1.SchemeGroupVersion.String() && kind == reflect.TypeOf(claimv1alpha1.PackageDependency{}).Name():
 			// get pvar information
-			if err := r.gatherDependencyfromPDEP(ctx, gv.WithKind(kind), krmResource); err != nil {
+			if err := r.gatherDependencyfromPDEP(ctx, gv.WithKind(kind), rn); err != nil {
 				r.dependency.AddGVKResolutionError(schema.FromAPIVersionAndKind(apiVersion, kind), err)
 				continue
 			}
@@ -97,9 +100,11 @@ func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, reso
 		}
 	}
 
-	for _, krmResource := range resources {
+	for _, rn := range resources {
 		//get apiVersion and kind from krmResource
-		apiVersion, kind := getApiVersionKind(krmResource)
+		//apiVersion, kind := getApiVersionKind(krmResource)
+		apiVersion := rn.GetApiVersion()
+		kind := rn.GetKind()
 		gv, err := schema.ParseGroupVersion(apiVersion)
 		if err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
@@ -109,19 +114,19 @@ func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, reso
 		switch {
 		case apiVersion == rbacv1.SchemeGroupVersion.String() && kind == reflect.TypeOf(rbacv1.ClusterRole{}).Name():
 			// get rbac information
-			if err := r.gatherDependencyfromClusterRole(ctx, gv.WithKind(kind), krmResource); err != nil {
+			if err := r.gatherDependencyfromClusterRole(ctx, gv.WithKind(kind), rn); err != nil {
 				r.dependency.AddGVKResolutionError(schema.FromAPIVersionAndKind(apiVersion, kind), err)
 				continue
 			}
 		case apiVersion == rbacv1.SchemeGroupVersion.String() && kind == reflect.TypeOf(rbacv1.Role{}).Name():
 			// get rbac information
-			if err := r.gatherDependencyfromRole(ctx, gv.WithKind(kind), krmResource); err != nil {
+			if err := r.gatherDependencyfromRole(ctx, gv.WithKind(kind), rn); err != nil {
 				r.dependency.AddGVKResolutionError(schema.FromAPIVersionAndKind(apiVersion, kind), err)
 				continue
 			}
 		case apiVersion == configv1alpha1.SchemeGroupVersion.String() && kind == reflect.TypeOf(configv1alpha1.PackageVariant{}).Name():
 			// get pvar information
-			if err := r.gatherDependencyfromPVAR(ctx, gv.WithKind(kind), krmResource); err != nil {
+			if err := r.gatherDependencyfromPVAR(ctx, gv.WithKind(kind), rn); err != nil {
 				r.dependency.AddGVKResolutionError(schema.FromAPIVersionAndKind(apiVersion, kind), err)
 				continue
 			}
@@ -134,8 +139,10 @@ func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, reso
 	}
 	// TODO update this to ensure we get the correct parameters
 	// This is the package dependency due to a mixin.
-	for _, krmResource := range packages {
-		apiVersion, kind := getApiVersionKind(krmResource)
+	for _, rn := range packages {
+		//apiVersion, kind := getApiVersionKind(krmResource)
+		apiVersion := rn.GetApiVersion()
+		kind := rn.GetKind()
 		gv, err := schema.ParseGroupVersion(apiVersion)
 		if err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
@@ -268,16 +275,23 @@ func (r *dependencyResolver) gatherDependencyfromPVAR(ctx context.Context, gvk s
 	return nil
 }
 
-func (r *dependencyResolver) gatherDependencyfromPDEP(ctx context.Context, gvk schema.GroupVersionKind, krmResource any) error {
+func (r *dependencyResolver) gatherDependencyfromPDEP(ctx context.Context, gvk schema.GroupVersionKind, rn *yaml.RNode) error {
 	log := log.FromContext(ctx)
-	b, err := yaml.Marshal(krmResource)
+	/*
+		b, err := yaml.Marshal(krmResource)
+		if err != nil {
+			log.Error("cannot marshal packageDependency")
+			return err
+		}
+	*/
+	yamlString, err := rn.String()
 	if err != nil {
-		log.Error("cannot marshal packageDependency")
+		log.Error("cannot marshal crd")
 		return err
 	}
-	log.Debug("gatherDependencyfromPDEP", "string", string(b))
+	log.Debug("gatherDependencyfromPDEP", "string", yamlString)
 	pdep := &claimv1alpha1.PackageDependency{}
-	if err := yaml.Unmarshal(b, pdep); err != nil {
+	if err := yaml.Unmarshal([]byte(yamlString), pdep); err != nil {
 		log.Error("cannot unmarshal packageDependency")
 		return err
 	}

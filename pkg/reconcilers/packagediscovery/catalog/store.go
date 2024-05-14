@@ -19,7 +19,6 @@ package catalog
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/henderiw/apiserver-store/pkg/storebackend"
 	memstore "github.com/henderiw/apiserver-store/pkg/storebackend/memory"
@@ -30,6 +29,7 @@ import (
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 const (
@@ -115,7 +115,7 @@ func (r *Store) DeletePkgRev(ctx context.Context, cr *pkgv1alpha1.PackageRevisio
 	}
 }
 
-func (r *Store) UpdatePkgRevAPI(ctx context.Context, cr *pkgv1alpha1.PackageRevision, outputs []any) {
+func (r *Store) UpdatePkgRevAPI(ctx context.Context, cr *pkgv1alpha1.PackageRevision, outputs []*yaml.RNode) {
 	log := log.FromContext(ctx)
 
 	// we gather the apis that are referenced in this package revision
@@ -212,7 +212,7 @@ func (r *Store) UpdateAPIfromAPIResources(ctx context.Context, apiResources []*m
 	}
 }
 
-func (r *Store) UpdatePkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.PackageRevision, packages, inputs, resources []any) {
+func (r *Store) UpdatePkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.PackageRevision, packages, inputs, resources []*yaml.RNode) {
 	log := log.FromContext(ctx)
 	dr := newDependencyResolver(
 		r.recorder,
@@ -246,16 +246,16 @@ func (r *Store) GetPkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.Packa
 
 func (r *Store) Print(ctx context.Context) {
 	/*
-	fmt.Println("****** API resources ******")
-	r.catalogAPIStore.List(ctx, func(ctx context.Context, key storebackend.Key, api *API) {
-		fmt.Printf("type: %s, group: %s, kind: %s, resource: %s, versions: %v\n", api.Type.String(), key.Namespace, key.Name, api.Resource, api.Versions)
-	})
-	fmt.Println("****************************")
-	fmt.Println("******** GR MAPPING ********")
-	r.catalogGRMap.List(ctx, func(ctx context.Context, key storebackend.Key, kind string) {
-		fmt.Println(key.Namespace, key.Name, kind)
-	})
-	fmt.Println("****************************")
+		fmt.Println("****** API resources ******")
+		r.catalogAPIStore.List(ctx, func(ctx context.Context, key storebackend.Key, api *API) {
+			fmt.Printf("type: %s, group: %s, kind: %s, resource: %s, versions: %v\n", api.Type.String(), key.Namespace, key.Name, api.Resource, api.Versions)
+		})
+		fmt.Println("****************************")
+		fmt.Println("******** GR MAPPING ********")
+		r.catalogGRMap.List(ctx, func(ctx context.Context, key storebackend.Key, kind string) {
+			fmt.Println(key.Namespace, key.Name, kind)
+		})
+		fmt.Println("****************************")
 	*/
 	fmt.Println("**** Package Catalog ****")
 	r.catalogPkgStore.List(ctx, func(ctx context.Context, key storebackend.Key, dep *Dependency) {
@@ -273,6 +273,7 @@ func (r *apiDiscoverer) PrintPkgResources(ctx context.Context) {
 }
 */
 
+/*
 func getApiVersionKind(krmResource any) (string, string) {
 	apiVersion := ""
 	kind := ""
@@ -294,3 +295,4 @@ func getApiVersionKind(krmResource any) (string, string) {
 	}
 	return apiVersion, kind
 }
+*/

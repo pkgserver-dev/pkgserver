@@ -26,7 +26,8 @@ import (
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	apiv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
+	//"sigs.k8s.io/yaml"
 )
 
 // per resource
@@ -52,22 +53,22 @@ func newAPIreferences(recorder recorder.Recorder[diag.Diagnostic]) *apiReference
 	}
 }
 
-func (r apiReferences) gatherAPIs(ctx context.Context, outputs []any) {
-	for _, krmResource := range outputs {
+func (r apiReferences) gatherAPIs(ctx context.Context, outputs []*yaml.RNode) {
+	for _, rn := range outputs {
 		//get apiVersion and kind from krmResource
-		apiVersion, kind := getApiVersionKind(krmResource)
+		/*apiVersion, kind := getApiVersionKind(krmResource)*/
 		//schema.ParseGroupVersion(apiVersion)
 		switch {
-		case apiVersion == extv1.SchemeGroupVersion.String() && kind == reflect.TypeOf(extv1.CustomResourceDefinition{}).Name():
+		case rn.GetApiVersion() == extv1.SchemeGroupVersion.String() && rn.GetKind() == reflect.TypeOf(extv1.CustomResourceDefinition{}).Name():
 			// get crd information
-			if err := r.gatherAPIfromCRD(ctx, krmResource); err != nil {
+			if err := r.gatherAPIfromCRD(ctx, rn); err != nil {
 				// we don't err since it allows us to record all errors
 				// error is due to marshaling -> record as error
 				r.recorder.Record(diag.DiagFromErr(err))
 			}
-		case apiVersion == apiv1.SchemeGroupVersion.String() && kind == reflect.TypeOf(apiv1.APIService{}).Name():
+		case rn.GetApiVersion() == apiv1.SchemeGroupVersion.String() && rn.GetKind() == reflect.TypeOf(apiv1.APIService{}).Name():
 			// get apiService information
-			if err := r.gatherAPIfromAPIService(ctx, krmResource); err != nil {
+			if err := r.gatherAPIfromAPIService(ctx, rn); err != nil {
 				// we don't err since it allows us to record all errors
 				// error is due to marshaling -> record as error
 				r.recorder.Record(diag.DiagFromErr(err))
@@ -78,15 +79,23 @@ func (r apiReferences) gatherAPIs(ctx context.Context, outputs []any) {
 	}
 }
 
-func (r *apiReferences) gatherAPIfromCRD(ctx context.Context, krmResource any) error {
+func (r *apiReferences) gatherAPIfromCRD(ctx context.Context, rn *yaml.RNode) error {
 	log := log.FromContext(ctx)
-	b, err := yaml.Marshal(krmResource)
+	/*
+		b, err := yaml.Marshal(krmResource)
+		if err != nil {
+			log.Error("cannot marshal crd")
+			return err
+		}
+	*/
+	yamlString, err := rn.String()
 	if err != nil {
 		log.Error("cannot marshal crd")
 		return err
 	}
+
 	crd := &extv1.CustomResourceDefinition{}
-	if err := yaml.Unmarshal(b, crd); err != nil {
+	if err := yaml.Unmarshal([]byte(yamlString), crd); err != nil {
 		log.Error("cannot unmarshal crd")
 		return err
 	}
@@ -110,15 +119,22 @@ func (r *apiReferences) gatherAPIfromCRD(ctx context.Context, krmResource any) e
 	return nil
 }
 
-func (r *apiReferences) gatherAPIfromAPIService(ctx context.Context, krmResource any) error {
+func (r *apiReferences) gatherAPIfromAPIService(ctx context.Context, rn *yaml.RNode) error {
 	log := log.FromContext(ctx)
+	/*
 	b, err := yaml.Marshal(krmResource)
 	if err != nil {
 		log.Error("cannot marshal apiService")
 		return err
 	}
+	*/
+	yamlString, err := rn.String()
+	if err != nil {
+		log.Error("cannot marshal crd")
+		return err
+	}
 	apiService := &apiv1.APIService{}
-	if err := yaml.Unmarshal(b, apiService); err != nil {
+	if err := yaml.Unmarshal([]byte(yamlString), apiService); err != nil {
 		log.Error("cannot unmarshal apiService")
 		return err
 	}

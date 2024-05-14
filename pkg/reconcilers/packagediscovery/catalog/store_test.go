@@ -18,11 +18,9 @@ package catalog
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
-	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
 	"github.com/google/go-cmp/cmp"
 	"github.com/henderiw/apiserver-store/pkg/storebackend"
 	"github.com/kform-dev/kform/pkg/recorder"
@@ -32,26 +30,33 @@ import (
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
+	//"sigs.k8s.io/yaml"
 )
 
-func getOutput(path string) ([]any, error) {
+func getOutput(path string) ([]*yaml.RNode, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	ko, err := fn.ParseKubeObject(b)
+	rn, err := yaml.Parse(string(b))
 	if err != nil {
 		return nil, err
 	}
-	if ko == nil {
-		return nil, fmt.Errorf("cannot create a block without a kubeobject")
-	}
-	var v map[string]any
-	if err := yaml.Unmarshal([]byte(ko.String()), &v); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal the kubeobject, err: %s", err.Error())
-	}
-	return []any{v}, nil
+	/*
+		ko, err := fn.ParseKubeObject(b)
+		if err != nil {
+			return nil, err
+		}
+		if ko == nil {
+			return nil, fmt.Errorf("cannot create a block without a kubeobject")
+		}
+		var v map[string]any
+		if err := yaml.Unmarshal([]byte(ko.String()), &v); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal the kubeobject, err: %s", err.Error())
+		}
+	*/
+	return []*yaml.RNode{rn}, nil
 }
 
 func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
