@@ -124,7 +124,6 @@ func (r *Store) UpdatePkgRevAPI(ctx context.Context, cr *pkgv1alpha1.PackageRevi
 	apiReferences.gatherAPIs(ctx, outputs)
 	// dont proceed if there was an error found
 	if r.recorder.Get().HasError() {
-
 		return
 	}
 

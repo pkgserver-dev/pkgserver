@@ -18,6 +18,7 @@ package catalog
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -107,6 +108,10 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 				t.Errorf("cannot get output resources, unexpected error\n%s", err.Error())
 			}
 
+			for _, rn := range outputs {
+				fmt.Println(rn.MustString())
+			}
+
 			pkgID := pkgid.PackageID{
 				Repository: "dummy",
 				Realm:      pkgID.Realm,
@@ -125,6 +130,7 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 			pkgRevRecorder := recorder.New[diag.Diagnostic]()
 			ctx = context.WithValue(ctx, kformtypes.CtxKeyRecorder, pkgRevRecorder)
 			r := NewStore()
+			r.InitializeRecorder(pkgRevRecorder)
 			r.UpdatePkgRevAPI(
 				ctx,
 				pkgRev,

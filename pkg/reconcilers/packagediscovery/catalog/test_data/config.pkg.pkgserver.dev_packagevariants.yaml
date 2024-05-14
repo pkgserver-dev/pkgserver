@@ -9,7 +9,6 @@ spec:
   group: config.pkg.pkgserver.dev
   names:
     categories:
-    - kform
     - pkg
     kind: PackageVariant
     listKind: PackageVariantList
