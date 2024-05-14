@@ -100,7 +100,7 @@ func (r *gitRepository) getCommit(ctx context.Context, pkgRev *pkgv1alpha1.Packa
 			}
 			return nil, fmt.Errorf("commit not found for ref: %s", tagRefName.String())
 		}
-		_, commit, err := r.getBranchAndCommitFromTagHash(ctx, pkgRev.Spec.PackageID.Package, tagRef.Hash())
+		_, commit, err := r.getBranchAndCommitFromTagHash(ctx, pkgRev.Spec.PackageID.Package, tagRef.Hash(), tagRefName.String())
 		return commit, err
 	} else {
 		branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)

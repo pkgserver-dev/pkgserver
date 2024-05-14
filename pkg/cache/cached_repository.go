@@ -101,7 +101,7 @@ func (r *CachedRepository) reconcileCache(ctx context.Context) error {
 		return err
 	}
 	for _, discoveredPkgRev := range discoveredPkgRevs {
-		log.Debug("discovered package revision", "name", discoveredPkgRev)
+		log.Info("discovered package revision", "name", discoveredPkgRev)
 
 		key := types.NamespacedName{
 			Namespace: discoveredPkgRev.Namespace,

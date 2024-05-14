@@ -129,15 +129,15 @@ func (r *gitRepository) getTaggedPackage(ctx context.Context, tagRef *plumbing.R
 func (r *gitRepository) getBranchAndCommitFromTag(ctx context.Context, packageName string, tagRef *plumbing.Reference) (string, *object.Commit, error) {
 	if annotedTagObject, err := r.repo.Repo.TagObject(tagRef.Hash()); err != plumbing.ErrObjectNotFound {
 		if annotedTagObject.TargetType == plumbing.CommitObject {
-			return r.getBranchAndCommitFromTagHash(ctx, packageName, annotedTagObject.Target)
+			return r.getBranchAndCommitFromTagHash(ctx, packageName, annotedTagObject.Target, tagRef.Name().String())
 		}
 		return "", nil, fmt.Errorf("commit not found for ref: %s", tagRef.Name().String())
 	}
-	return r.getBranchAndCommitFromTagHash(ctx, packageName, tagRef.Hash())
+	return r.getBranchAndCommitFromTagHash(ctx, packageName, tagRef.Hash(), tagRef.Name().String())
 }
 
-func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packageName string, hash plumbing.Hash) (string, *object.Commit, error) {
-	log := log.FromContext(ctx).With("packageName", packageName, "Hash", hash.String())
+func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packageName string, tagHash plumbing.Hash, tagRefName string) (string, *object.Commit, error) {
+	log := log.FromContext(ctx).With("packageName", packageName, "Hash", tagHash.String())
 	log.Info("getBranchAndCommitFromHash")
 
 	refs, err := r.repo.Repo.References()
@@ -156,12 +156,12 @@ func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packa
 			if isMainBranch(ref.Name(), string(r.branch)) {
 				// main branch
 				log.Info("getBranchAndCommitFromHash main branch")
-				commit, err := r.repo.Repo.CommitObject(hash)
+				commit, err := r.repo.Repo.CommitObject(tagHash)
 				if err != nil {
-					log.Error("getBranchAndCommitFromHash cannot get commit from hash for main", "hash", hash.String(), "err", err.Error())
+					log.Error("getBranchAndCommitFromHash cannot get commit from hash for main", "hash", tagHash.String(), "err", err.Error())
 					return err
 				}
-				parts := strings.Split(ref.Name().String(), "/")
+				parts := strings.Split(tagRefName, "/") // we use the tagRefName iso ref.Name since the ref points always to main, while we want to use the revision
 				ws = parts[len(parts)-1]
 				tagCommit = commit
 				return storer.ErrStop // stops the iterator
@@ -175,14 +175,14 @@ func (r *gitRepository) getBranchAndCommitFromTagHash(ctx context.Context, packa
 					log.Error("getBranchAndCommitFromHash cannot get commits from hash", "hash", ref.Hash().String(), "err", err.Error())
 					return err
 				}
-				log.Info("getBranchAndCommitFromHash match", "hash", hash.String())
+				log.Info("getBranchAndCommitFromHash match", "hash", tagHash.String())
 				for {
 					commit, err := commits.Next()
 					if err != nil {
 						break
 					}
-					log.Info("getBranchAndCommitFromHash does branches match", "tagHash", hash.String(), "commitHash", commit.Hash.String())
-					if commit.Hash.String() == hash.String() {
+					log.Info("getBranchAndCommitFromHash does branches match", "tagHash", tagHash.String(), "commitHash", commit.Hash.String())
+					if commit.Hash.String() == tagHash.String() {
 						parts := strings.Split(ref.Name().String(), "/")
 						ws = parts[len(parts)-1]
 						tagCommit = commit

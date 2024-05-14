@@ -29,7 +29,6 @@ replace k8s.io/code-generator => k8s.io/code-generator v0.29.3
 replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.2
 
 require (
-	github.com/GoogleContainerTools/kpt-functions-sdk/go/fn v0.0.0-20230427202446-3255accc518d
 	github.com/adrg/xdg v0.4.0
 	github.com/fatih/color v1.16.0
 	github.com/go-git/go-billy/v5 v5.5.0
@@ -65,13 +64,13 @@ require (
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	kpt.dev/configsync v1.18.0
 	sigs.k8s.io/controller-runtime v0.18.2
+	sigs.k8s.io/kustomize/kyaml v0.15.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/GoogleContainerTools/kpt-functions-sdk/go/api v0.0.0-20230427202446-3255accc518d // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
@@ -201,6 +200,5 @@ require (
 	sigs.k8s.io/cli-utils v0.35.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.15.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
