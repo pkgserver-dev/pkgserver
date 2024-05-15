@@ -119,11 +119,11 @@ func (r *CachedRepository) reconcileCache(ctx context.Context) error {
 	return nil
 }
 
-func (r *CachedRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, useWSBranch bool) (map[string]string, error) {
+func (r *CachedRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) (map[string]string, error) {
 	ctx, span := tracer.Start(ctx, "cache::GetResources", trace.WithAttributes())
 	defer span.End()
 
-	return r.repo.GetResources(ctx, pkgRev, useWSBranch)
+	return r.repo.GetResources(ctx, pkgRev)
 }
 
 func (r *CachedRepository) UpsertPackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, resources map[string]string) error {

@@ -216,8 +216,8 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
 github.com/kevinburke/ssh_config v1.2.0/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
-github.com/kform-dev/kform v0.0.6-0.20240513152618-5972fa47f689 h1:bskSN4IPacZva6BjYsGvftcxp/9zVwCtWdZEeLBa0uc=
-github.com/kform-dev/kform v0.0.6-0.20240513152618-5972fa47f689/go.mod h1:HDFrpUZtDahN06NVIUh8Go/hv4dfnAIEOxyGQQh5/2U=
+github.com/kform-dev/kform v0.0.6-0.20240514191332-b2653f16f31c h1:fv53x3b9mfCGxKDyhLdShcet2w+yqsllfJwEp5myI5Y=
+github.com/kform-dev/kform v0.0.6-0.20240514191332-b2653f16f31c/go.mod h1:HDFrpUZtDahN06NVIUh8Go/hv4dfnAIEOxyGQQh5/2U=
 github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d h1:2hfdjVCSF4W/tyZVvy6zwyOdXQiKAh9zdwsO2L0O0T4=
 github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d/go.mod h1:Pc1yRNX9Nyt9LBHUxtTe1Xi7TOsGDEdmAL4BINA5W00=
 github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706 h1:sybwRbJfFK7+kjQUXbh8OSFugdCfd31yvKrzfXxieJg=

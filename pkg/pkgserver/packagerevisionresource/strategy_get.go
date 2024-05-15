@@ -28,7 +28,7 @@ import (
 
 func (r *strategy) Get(ctx context.Context, key types.NamespacedName) (runtime.Object, error) {
 	log := log.FromContext(ctx)
-	log.Info("get...", "key", key)
+	log.Debug("get...", "key", key)
 	pkgRev, err := r.getPackageRevision(ctx, key)
 	if err != nil {
 		log.Error("pkgRevResources cannot get pkgRev in apiserver", "key", key.String(), "error", err.Error())
@@ -48,13 +48,13 @@ func (r *strategy) Get(ctx context.Context, key types.NamespacedName) (runtime.O
 		log.Error("pkgRevResources cannot get cached repo", "repo", repo, "error", err.Error())
 		return nil, apierrors.NewInternalError(err)
 	}
-	log.Info("get resources", "key", pkgRev.Name)
-	resources, err := cachedRepo.GetResources(ctx, pkgRev, false)
+	log.Debug("get resources", "key", pkgRev.Name)
+	resources, err := cachedRepo.GetResources(ctx, pkgRev)
 	if err != nil {
 		log.Error("pkgRevResources cannot get resource in apiserver", "pkgRev", pkgRev, "error", err.Error())
 		return nil, apierrors.NewInternalError(err)
 	}
-	log.Info("build resources", "key", pkgRev.Name)
+	log.Debug("build resources", "key", pkgRev.Name)
 	pkgRevResources := buildPackageRevisionResources(pkgRev, resources)
 	//log.Info("pkgRevResources", "value", pkgRevResources)
 	return pkgRevResources, nil

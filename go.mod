@@ -41,7 +41,7 @@ require (
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/resource v0.0.0-20231228040228-cf28542fa2c6
 	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
-	github.com/kform-dev/kform v0.0.6-0.20240513152618-5972fa47f689
+	github.com/kform-dev/kform v0.0.6-0.20240514191332-b2653f16f31c
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
@@ -61,6 +61,7 @@ require (
 	k8s.io/component-base v0.30.0
 	k8s.io/kube-aggregator v0.29.3
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340
+	k8s.io/kubectl v0.28.8
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	kpt.dev/configsync v1.18.0
 	sigs.k8s.io/controller-runtime v0.18.2
@@ -195,7 +196,6 @@ require (
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kms v0.30.0 // indirect
-	k8s.io/kubectl v0.28.8 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
 	sigs.k8s.io/cli-utils v0.35.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect

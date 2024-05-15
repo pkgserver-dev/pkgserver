@@ -21,9 +21,15 @@ import (
 	"strings"
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (r *gitRepository) DeletePackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
+	ctx, span := tracer.Start(ctx, "gitRepository::DeletePackageRevision", trace.WithAttributes())
+	defer span.End()
+	r.m.Lock()
+	defer r.m.Unlock()
+
 	//log := log.FromContext(ctx)
 
 	// saftey sync with the repo

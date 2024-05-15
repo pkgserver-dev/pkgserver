@@ -171,7 +171,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	r.recorder.Eventf(cr, corev1.EventTypeNormal,
 		"PkgRevDiscovery", "ready")
-	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
 // updateCatalogStores updates the catalog store when a pkg is in published state

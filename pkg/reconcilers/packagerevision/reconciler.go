@@ -134,6 +134,16 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 		}
 
+		if len(cr.GetFinalizers()) > 1 {
+			msg := fmt.Sprintf("cannot delete the package revision since other reconcilers did not process the delete %v", cr.GetFinalizers())
+			log.Debug(msg)
+			cr.SetConditions(condition.Failed(msg))
+			r.recorder.Eventf(cr, corev1.EventTypeWarning,
+				"Error", msg)
+			// someone need to update the status appropriatly
+			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+		}
+
 		// Current Strategy: if repo does not exist we delete the pkgRev
 		// The repo will not be updated, otherwise the resource hangs
 		repo := &configv1alpha1.Repository{}
@@ -195,6 +205,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 	}
 
+	log.Info("upsert cr", "tasks", cr.Spec.Tasks)
+
 	if len(cr.Spec.Tasks) == 0 {
 		if cr.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished {
 			deployment, cachedRepo, err := r.getRepo(ctx, cr)
@@ -205,6 +217,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					"Error", "error %s", err.Error())
 				return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 			}
+			log.Info("upsert cr", "pkgID", cr.Spec.PackageID)
 			if cr.Spec.PackageID.Revision == "" {
 				// allocate a revision
 
@@ -280,6 +293,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// ensure Tag for pkgRev in deployments
 			if deployment {
 				if err := cachedRepo.EnsurePackageRevision(ctx, cr); err != nil {
+					log.Error("ensure package revision failed", "error", err)
 					cr.SetConditions(condition.Failed(err.Error()))
 					r.recorder.Eventf(cr, corev1.EventTypeWarning,
 						"Error", "error %s", err.Error())

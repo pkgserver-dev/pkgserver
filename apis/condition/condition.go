@@ -200,6 +200,16 @@ func ConditionUpdate(ctype ConditionType, reason, msg string) Condition {
 	}}
 }
 
+func ConditionFailed(ctype ConditionType, msg string) Condition {
+	return Condition{metav1.Condition{
+		Type:               string(ctype),
+		Status:             metav1.ConditionFalse,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(ConditionReasonFailed),
+		Message:            msg,
+	}}
+}
+
 func ConditionReady(ctype ConditionType) Condition {
 	return Condition{metav1.Condition{
 		Type:               string(ctype),

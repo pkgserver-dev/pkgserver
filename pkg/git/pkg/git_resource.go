@@ -29,32 +29,34 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (r *gitRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, useWorkspaceBranch bool) (map[string]string, error) {
+func (r *gitRepository) GetResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) (map[string]string, error) {
 	ctx, span := tracer.Start(ctx, "gitRepository::GetResources", trace.WithAttributes())
 	defer span.End()
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	return r.getResources(ctx, pkgRev, false)
+
+}
+
+func (r *gitRepository) getResources(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, useWorkspaceBranch bool) (map[string]string, error) {
+	ctx, span := tracer.Start(ctx, "gitRepository::getResources", trace.WithAttributes())
+	defer span.End()
+	log := log.FromContext(ctx)
+	resources := map[string]string{}
 
 	// saftey sync with the repo
 	if err := r.repo.FetchRemoteRepository(ctx); err != nil {
 		return nil, err
 	}
 
-	log := log.FromContext(ctx)
 	commit, err := r.getCommit(ctx, pkgRev, useWorkspaceBranch)
 	if err != nil {
 		log.Error("get resources: cannot get commit", "err", err)
 		return nil, err
 	}
-	return getResources(ctx, pkgRev.Spec.PackageID, commit)
-
-}
-
-func getResources(ctx context.Context, pkgID pkgid.PackageID, commit *object.Commit) (map[string]string, error) {
-	log := log.FromContext(ctx)
-	resources := map[string]string{}
 	// get the root tree of the package
-	pkgRootTree, err := getPackageTree(ctx, pkgID, commit)
+	pkgRootTree, err := getPackageTree(ctx, pkgRev.Spec.PackageID, commit)
 	if err != nil {
 		log.Error("cannot get package root tree", "error", err.Error())
 		return resources, err

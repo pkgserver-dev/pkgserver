@@ -83,7 +83,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 
 	pkgRevName := args[0]
 	if !r.local {
-
 		// fetch the package revision
 		pkgRev := &pkgv1alpha1.PackageRevision{}
 		if err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: pkgRevName}, pkgRev); err != nil {

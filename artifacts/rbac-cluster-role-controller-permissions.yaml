@@ -33,3 +33,9 @@ rules:
 - apiGroups: ["configsync.gke.io"]
   resources: ["rootsyncs"]
   verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
+- apiGroups: [""] # needed for kform processor since inventory is stored in the a configmap
+  resources: ["configmaps"]
+  verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["ipam.be.kuid.dev"] # needed for kform processor since inventory is stored in the a configmap
+  resources: ["ipclaims"]
+  verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]

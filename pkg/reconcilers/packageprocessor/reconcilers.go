@@ -28,7 +28,8 @@ import (
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/exec/kform/runner"
-	"github.com/kform-dev/kform/pkg/pkgio"
+	"github.com/kform-dev/kform/pkg/inventory/config"
+	"github.com/pkg/errors"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	"github.com/pkgserver-dev/pkgserver/apis/generated/clientset/versioned"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
@@ -36,12 +37,15 @@ import (
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/kubectl/pkg/cmd/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -61,9 +65,6 @@ const (
 	errUpdateStatus     = "cannot update status"
 	controllerCondition = condition.ReadinessGate_PkgProcess
 )
-
-//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkg.pkgserver.dev,resources=packagerevision/status,verbs=get;update;patch
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, c interface{}) (map[schema.GroupVersionKind]chan event.GenericEvent, error) {
@@ -122,11 +123,13 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 	// the package revisioner first need to act e.g. to clone the repo
-	if cr.GetCondition(condition.ConditionTypeReady).Status == metav1.ConditionFalse {
+	// when the pkgRev is getting deleted this does not matter
+	if cr.GetDeletionTimestamp().IsZero() && cr.GetCondition(condition.ConditionTypeReady).Status == metav1.ConditionFalse {
 		return ctrl.Result{}, nil
 	}
 	// the previous condition is not finished, so we need to wait for acting
-	if cr.GetPreviousCondition(controllerCondition).Status == metav1.ConditionFalse {
+	// when the pkgRev is getting deleted this does not matter
+	if cr.GetDeletionTimestamp().IsZero() && cr.GetPreviousCondition(controllerCondition).Status == metav1.ConditionFalse {
 		return ctrl.Result{}, nil
 	}
 
@@ -141,7 +144,29 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"lease", "acquired")
 
 	if !cr.GetDeletionTimestamp().IsZero() {
-		// TODO release resources that were allocated e.g. ipam?
+		log.Info("deleting...")
+		if cr.Spec.PackageID.Revision != "" && cr.Spec.Lifecycle != pkgv1alpha1.PackageRevisionLifecycleDeletionProposed {
+			log.Info("cannot delete the kform resources since the package was released and the paackage is not in deletionProposed state")
+			return ctrl.Result{}, nil
+		}
+
+		// When the packageRevision gets deleted we need to cleanup the resources
+		// Kform created, the rest will be taken care of by gitops tooling e.g.
+		// so no need to update the package resources and inventory
+		resourceData, inventoryExists, localInventory, _, err := r.gatherPackageresources(ctx, cr)
+		if err != nil {
+			r.handleError(ctx, cr, "cannot get pkgRevResources", err)
+			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+		}
+		if inventoryExists {
+			// run kform with the destroy flag to true
+			_, err := r.runkform(ctx, cr, localInventory, memory.NewStore[[]byte](), resourceData, true)
+			if err != nil {
+				r.handleError(ctx, cr, "kform run failed", err)
+				return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
+			}
+			// No need to update the output if the cleanup was successfull since the package reference will be deleted
+		}
 
 		// remove the finalizer
 		if err := r.finalizer.RemoveFinalizer(ctx, cr); err != nil {
@@ -166,83 +191,28 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// determine error
 	// create output
 	if cr.GetCondition(controllerCondition).Status == metav1.ConditionFalse {
-		pkgRevResources, err := r.clientset.PkgV1alpha1().PackageRevisionResourceses(key.Namespace).Get(ctx, key.Name, metav1.GetOptions{})
+		resourceData, inventoryExists, localInventory, localInventoryString, err := r.gatherPackageresources(ctx, cr)
 		if err != nil {
-			log.Error("cannot get resources from pkgRevResources", "key", key, "error", err)
-			r.recorder.Eventf(cr, corev1.EventTypeWarning,
-				controllerEvent, "error %s", err.Error())
-			cr.SetConditions(condition.ConditionUpdate(controllerCondition, "cannot get resources from pkgRevResources", err.Error()))
+			r.handleError(ctx, cr, "cannot get pkgRevResources", err)
 			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 		}
 
-		//pkgrevResources = &pkgv1alpha1.PackageRevisionResources{}
-		/*
-			if err := r.Get(ctx, key, pkgrevResources); err != nil {
-				log.Error("cannot get resources from pkgRevResources", "key", key, "error", err)
-				r.recorder.Eventf(cr, corev1.EventTypeWarning,
-					controllerEvent, "error %s", err.Error())
-				cr.SetConditions(condition.ConditionUpdate(controllerCondition, "cannot get resources from pkgRevResources", err.Error()))
-				return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
-			}
-		*/
-		resourceData := memory.NewStore[[]byte]()
-		for path, v := range pkgRevResources.Spec.Resources {
-			reader := pkgio.ByteReader{
-				Reader:    strings.NewReader(v),
-				DataStore: resourceData,
-				Path:      path,
-			}
-			_, err := reader.Read(ctx)
-			if err != nil {
-				continue
-			}
-		}
 		// process input
-		inputData := memory.NewStore[[]byte]()
-		for i, input := range cr.Spec.Inputs {
-			inputData.Create(ctx, store.ToKey(fmt.Sprintf("pkgctx-%d", i)), input.Raw)
-		}
+		inputData := gatherInput(ctx, cr)
 
-		outputData := memory.NewStore[[]byte]()
-		kfrunner := runner.NewKformRunner(&runner.Config{
-			PackageName:  cr.Spec.PackageID.Package,
-			InputData:    inputData,
-			ResourceData: resourceData,
-			OutputData:   outputData,
-		})
-
-		if err := kfrunner.Run(ctx); err != nil {
-			log.Error("kform run failed", "error", err)
-			r.recorder.Eventf(cr, corev1.EventTypeWarning,
-				controllerEvent, "error %s", err.Error())
-			cr.SetConditions(condition.ConditionUpdate(controllerCondition, "kform run failed", err.Error()))
+		// run kform with destry flag to false
+		outputData, err := r.runkform(ctx, cr, localInventory, inputData, resourceData, false)
+		if err != nil {
+			r.handleError(ctx, cr, "kform run failed", err)
 			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 		}
 
-		resources := map[string]string{}
-		outputData.List(ctx, func(ctx context.Context, key store.Key, data []byte) {
-			fmt.Println("key", key.Name)
-			//fmt.Println("data", string(data))
-			resources[path.Join("out", key.Name)] = string(data)
-		})
-		newPkgrevResources := pkgv1alpha1.BuildPackageRevisionResources(
-			*cr.ObjectMeta.DeepCopy(),
-			pkgv1alpha1.PackageRevisionResourcesSpec{
-				PackageID: *cr.Spec.PackageID.DeepCopy(),
-				Resources: resources,
-			},
-			pkgv1alpha1.PackageRevisionResourcesStatus{},
-		)
-		//pkgrevResources.Spec.Resources = resources
-		if err := r.Update(ctx, newPkgrevResources); err != nil {
-			log.Error("cannot update pkgRevResources", "error", err)
-			r.recorder.Eventf(cr, corev1.EventTypeWarning,
-				controllerEvent, "error %s", err.Error())
-			cr.SetConditions(condition.ConditionUpdate(controllerCondition, "cannot update pkgRevResources", err.Error()))
+		if err := r.updatePackageRevisionResources(ctx, cr, outputData, inventoryExists, localInventoryString); err != nil {
+			r.handleError(ctx, cr, "cannot update pkgRevResources", err)
 			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 		}
 
-		log.Debug("process complete")
+		log.Debug("kform processor complete")
 		r.recorder.Eventf(cr, corev1.EventTypeNormal,
 			controllerEvent, "ready")
 		cr.SetConditions(condition.ConditionReady(controllerCondition))
@@ -255,4 +225,131 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *reconciler) handleError(ctx context.Context, cr *pkgv1alpha1.PackageRevision, msg string, err error) {
+	log := log.FromContext(ctx)
+	if err == nil {
+		cr.SetConditions(condition.ConditionFailed(controllerCondition, msg))
+		log.Error(msg)
+		r.recorder.Eventf(cr, corev1.EventTypeWarning, controllerName, msg)
+	} else {
+		cr.SetConditions(condition.ConditionFailed(controllerCondition, err.Error()))
+		log.Error(msg, "error", err)
+		r.recorder.Eventf(cr, corev1.EventTypeWarning, controllerName, fmt.Sprintf("%s, err: %s", msg, err.Error()))
+	}
+}
+
+func (r *reconciler) gatherPackageresources(ctx context.Context, cr *pkgv1alpha1.PackageRevision) (store.Storer[[]byte], bool, *unstructured.Unstructured, string, error) {
+	resourceData := memory.NewStore[[]byte]()
+	var inventoryResource string
+	var inventoryExists bool
+
+	pkgRevResources, err := r.clientset.PkgV1alpha1().PackageRevisionResourceses(cr.GetNamespace()).Get(ctx, cr.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return resourceData, inventoryExists, nil, inventoryResource, err
+	}
+
+	for path, v := range pkgRevResources.Spec.Resources {
+		// the path contains the files with their relative path within the package
+		// Anything with a / is a file from a subdirectory and is not a business logic resource
+		// for kform
+		if !strings.Contains(path, "/") {
+			// gather the kform resources which form the business logic for the kform fn run
+			if err := resourceData.Create(ctx, store.ToKey(path), []byte(v)); err != nil {
+				continue
+			}
+		}
+		if config.InventoryPath("") == path {
+			// this gathers the inventory file stored in .kform/kform-inventory.yaml to be able to
+			// lookup the resources that were applied to the system
+			inventoryResource = v
+			inventoryExists = true
+		}
+	}
+
+	if inventoryResource == "" {
+		// no inventory found -> generate inventoryObject
+		invConfig := config.New(genericiooptions.IOStreams{})
+		invConfig.InventoryID, err = config.DefaultInventoryID()
+		if err != nil {
+			return resourceData, inventoryExists, nil, inventoryResource, err
+		}
+		inventoryResource = invConfig.GetInventoryFileString()
+	}
+
+	localInventory, err := config.ParseInventoryFile([]byte(inventoryResource))
+	if err != nil {
+		return resourceData, inventoryExists, nil, inventoryResource, err
+	}
+	return resourceData, inventoryExists, localInventory, inventoryResource, err
+}
+
+func gatherInput(ctx context.Context, cr *pkgv1alpha1.PackageRevision) store.Storer[[]byte] {
+	// process input
+	inputData := memory.NewStore[[]byte]()
+	for i, input := range cr.Spec.Inputs {
+		inputData.Create(ctx, store.ToKey(fmt.Sprintf("pkgctx-%d", i)), input.Raw)
+	}
+	return inputData
+}
+
+func (r *reconciler) runkform(
+	ctx context.Context,
+	cr *pkgv1alpha1.PackageRevision,
+	localInventory *unstructured.Unstructured,
+	inputData store.Storer[[]byte],
+	resourceData store.Storer[[]byte],
+	destroy bool,
+) (store.Storer[[]byte], error) {
+	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()
+	matchVersionKubeConfigFlags := util.NewMatchVersionFlags(kubeConfigFlags)
+
+	outputData := memory.NewStore[[]byte]()
+	kformRunnerConfig := &runner.Config{
+		Factory:        util.NewFactory(util.NewMatchVersionFlags(matchVersionKubeConfigFlags)),
+		PackageName:    cr.Spec.PackageID.Package,
+		LocalInventory: localInventory,
+		InputData:      inputData,
+		ResourceData:   resourceData,
+		OutputData:     outputData,
+		DryRun:         false,
+	}
+	if destroy {
+		kformRunnerConfig.Destroy = true
+	} else {
+		kformRunnerConfig.AutoApprove = true
+	}
+
+	kfrunner := runner.NewKformRunner(kformRunnerConfig)
+
+	return outputData, kfrunner.Run(ctx)
+}
+
+func (r *reconciler) updatePackageRevisionResources(
+	ctx context.Context,
+	cr *pkgv1alpha1.PackageRevision,
+	outputData store.Storer[[]byte],
+	inventoryExists bool,
+	localInventoryString string,
+) error {
+	resources := map[string]string{}
+	outputData.List(ctx, func(ctx context.Context, key store.Key, data []byte) {
+		resources[path.Join("out", key.Name)] = string(data)
+	})
+
+	// if the inventory resource was not provided we need to add it
+	// to the resource so it will get committed
+	if !inventoryExists {
+		resources[config.InventoryPath("")] = localInventoryString
+	}
+	newPkgrevResources := pkgv1alpha1.BuildPackageRevisionResources(
+		*cr.ObjectMeta.DeepCopy(),
+		pkgv1alpha1.PackageRevisionResourcesSpec{
+			PackageID: *cr.Spec.PackageID.DeepCopy(),
+			Resources: resources,
+		},
+		pkgv1alpha1.PackageRevisionResourcesStatus{},
+	)
+	return r.Update(ctx, newPkgrevResources)
 }

@@ -44,7 +44,7 @@ type gitRepository struct {
 	repo   *pkggit.Repository
 	branch BranchName
 
-	mu sync.RWMutex
+	m sync.RWMutex
 }
 
 type Options struct {

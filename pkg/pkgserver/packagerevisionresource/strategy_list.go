@@ -130,7 +130,7 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 				}
 				//return apierrors.NewInternalError(err)
 			}
-			resources, err := cachedRepo.GetResources(ctx, &pkgRev, false)
+			resources, err := cachedRepo.GetResources(ctx, &pkgRev)
 			if err != nil {
 				prrChan <- prr{
 					prr: nil,

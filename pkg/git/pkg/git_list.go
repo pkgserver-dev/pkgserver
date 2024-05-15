@@ -32,13 +32,17 @@ import (
 )
 
 func (r *gitRepository) ListPackageRevisions(ctx context.Context, opt *repository.ListOption) ([]*pkgv1alpha1.PackageRevision, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	ctx, span := tracer.Start(ctx, "gitRepository::ListPackageRevisions", trace.WithAttributes())
+	defer span.End()
+	r.m.Lock()
+	defer r.m.Unlock()
 
 	return r.listPackageRevisions(ctx, opt)
 }
 
 func (r *gitRepository) listPackageRevisions(ctx context.Context, opt *repository.ListOption) ([]*pkgv1alpha1.PackageRevision, error) {
+	ctx, span := tracer.Start(ctx, "gitRepository::ListPackageRevisions", trace.WithAttributes())
+	defer span.End()
 	log := log.FromContext(ctx)
 
 	if err := r.repo.FetchRemoteRepository(ctx); err != nil {

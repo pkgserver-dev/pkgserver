@@ -28,11 +28,16 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/henderiw/logger/log"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (r *gitRepository) EnsurePackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
+	ctx, span := tracer.Start(ctx, "gitRepository::EnsurePackageRevision", trace.WithAttributes())
+	defer span.End()
+	r.m.Lock()
+	defer r.m.Unlock()
 	log := log.FromContext(ctx)
-	log.Debug("EnsurePackageRevision")
+	log.Info("EnsurePackageRevision")
 
 	// saftey sync with the repo
 	if err := r.repo.FetchRemoteRepository(ctx); err != nil {
@@ -46,6 +51,10 @@ func (r *gitRepository) EnsurePackageRevision(ctx context.Context, pkgRev *pkgv1
 }
 
 func (r *gitRepository) UpsertPackageRevision(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, resources map[string]string) error {
+	ctx, span := tracer.Start(ctx, "gitRepository::UpsertPackageRevision", trace.WithAttributes())
+	defer span.End()
+	r.m.Lock()
+	defer r.m.Unlock()
 	log := log.FromContext(ctx)
 
 	// saftey sync with the repo
@@ -99,6 +108,8 @@ func (r *gitRepository) UpsertPackageRevision(ctx context.Context, pkgRev *pkgv1
 }
 
 func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, resources map[string]string) (plumbing.Hash, error) {
+	ctx, span := tracer.Start(ctx, "gitRepository::commit", trace.WithAttributes())
+	defer span.End()
 	log := log.FromContext(ctx)
 	// get the parent commit
 	// could be either the head of the main branch or the latest pkg revision
@@ -257,70 +268,75 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 // 2b: workspace branch does not exists -> tag should exist
 func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision) error {
 	log := log.FromContext(ctx)
+	log.Info("commitToMain")
 	// check if the workspaceBranch still exists
 	branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
 	refName, err := r.repo.Repo.Reference(branchRefName, true)
-	if err == nil {
-		// the branch exists we execute the following things
-		// get Resources from workspace branch -> we use the true flag to indicate to use
-		// the workspacebranch iso the package revision
-		resources, err := r.GetResources(ctx, pkgRev, true)
-		if err != nil {
+	if err != nil {
+		return err
+	}
+	log.Info("commitToMain", "branchref", refName.Name().String())
+	// the branch exists we execute the following things
+	// get Resources from workspace branch -> we use the true flag to indicate to use
+	// the workspacebranch iso the package revision
+	resources, err := r.getResources(ctx, pkgRev, true)
+	if err != nil {
+		return err
+	}
+	log.Info("commitToMain", "resources", resources)
+	commitHash, err := r.commit(ctx, pkgRev, resources)
+	if err != nil {
+		return err
+	}
+	pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
+	log.Info("commitToMain", "pkgTagName", pkgTagName)
+	// Get the commit object from the reference.
+	commitObj, err := r.repo.Repo.CommitObject(commitHash)
+	if err != nil {
+		return err
+	}
+
+	tagRef, err := r.repo.Repo.CreateTag(string(pkgTagName), commitObj.Hash, &git.CreateTagOptions{
+		Tagger: &object.Signature{
+			Name:  commitSignatureName,
+			Email: commitSignatureEmail,
+			When:  time.Now(),
+		},
+		Message: string(pkgTagName),
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "tag already exists") {
+			log.Error("cannot create tag", "error", err)
 			return err
 		}
-		commitHash, err := r.commit(ctx, pkgRev, resources)
-		if err != nil {
-			return err
-		}
-		pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
-		// Get the commit object from the reference.
-		commitObj, err := r.repo.Repo.CommitObject(commitHash)
-		if err != nil {
-			return err
-		}
-
-		tagRef, err := r.repo.Repo.CreateTag(string(pkgTagName), commitObj.Hash, &git.CreateTagOptions{
-			Tagger: &object.Signature{
-				Name:  commitSignatureName,
-				Email: commitSignatureEmail,
-				When:  time.Now(),
-			},
-			Message: string(pkgTagName),
-		})
-		if err != nil {
-			if !strings.Contains(err.Error(), "tag already exists") {
-				log.Error("cannot create tag", "error", err)
-				return err
-			}
-			return nil
-		}
-
-		log.Info("create tag local", "tagRef", pkgTagName.TagInLocal().String(), "tagRef", string(pkgTagName))
-		// push the tag
-		refSpecs := newPushRefSpecBuilder()
-		// build the refs to push to the remote reference
-		refSpecs.AddRefToPush(tagRef.Name(), commitObj.Hash)
-
-		specs, require, err := refSpecs.BuildRefSpecs()
-		if err != nil {
-			return err
-		}
-		if err := r.repo.PushAndCleanup(ctx, specs, require); err != nil {
-			if !errors.Is(err, git.NoErrAlreadyUpToDate) {
-				return err
-			}
-		}
-
-		if err := r.deleteRef(ctx, refName); err != nil {
-			if !strings.Contains(err.Error(), "reference not found") {
-				return err
-			}
-		}
-
+		log.Info("commitToMain", "tag already exists", pkgTagName)
 		return nil
 	}
 
+	log.Info("create tag local", "tagRef", pkgTagName.TagInLocal().String(), "tagRef", string(pkgTagName))
+	// push the tag
+	refSpecs := newPushRefSpecBuilder()
+	// build the refs to push to the remote reference
+	refSpecs.AddRefToPush(tagRef.Name(), commitObj.Hash)
+
+	specs, require, err := refSpecs.BuildRefSpecs()
+	if err != nil {
+		return err
+	}
+	if err := r.repo.PushAndCleanup(ctx, specs, require); err != nil {
+		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return err
+		}
+	}
+
+	if err := r.deleteRef(ctx, refName); err != nil {
+		if !strings.Contains(err.Error(), "reference not found") {
+			return err
+		}
+	}
+
 	return nil
+
 }
 
 // DO NOT DELETE

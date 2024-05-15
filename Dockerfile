@@ -33,6 +33,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o pk
 FROM alpine:latest
 #FROM scratch
 WORKDIR /
+COPY ./bin/kform-provider-kubernetes ./providers/kform-provider-kubernetes
 COPY --from=builder /workspace/pkg-server /app/
 #USER 65532:65532
 
