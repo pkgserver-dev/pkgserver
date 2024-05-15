@@ -289,7 +289,9 @@ func gatherInput(ctx context.Context, cr *pkgv1alpha1.PackageRevision) store.Sto
 	// process input
 	inputData := memory.NewStore[[]byte]()
 	for i, input := range cr.Spec.Inputs {
-		inputData.Create(ctx, store.ToKey(fmt.Sprintf("pkgctx-%d", i)), input.Raw)
+		fmt.Println("kform processor gatherInput", fmt.Sprintf("pkgctx-%d.yaml", i), string(input.Raw))
+		// ensure this is a yaml file, otherwise the reader will not pick it up
+		inputData.Create(ctx, store.ToKey(fmt.Sprintf("pkgctx-%d.yaml", i)), input.Raw)
 	}
 	return inputData
 }
@@ -304,6 +306,8 @@ func (r *reconciler) runkform(
 ) (store.Storer[[]byte], error) {
 	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()
 	matchVersionKubeConfigFlags := util.NewMatchVersionFlags(kubeConfigFlags)
+
+	fmt.Println("kform processor inputdata", inputData.Len(ctx))
 
 	outputData := memory.NewStore[[]byte]()
 	kformRunnerConfig := &runner.Config{
