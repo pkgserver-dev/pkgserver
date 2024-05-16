@@ -20,7 +20,7 @@ syntax = "proto2";
 package github.com.pkgserver_dev.pkgserver.apis.pkg.v1alpha1;
 
 import "github.com/pkgserver-dev/pkgserver/apis/condition/generated.proto";
-import "github.com/pkgserver-dev/pkgserver/apis/pkgid/generated.proto";
+import "github.com/pkgserver-dev/pkgserver/apis/pkgrevid/generated.proto";
 import "k8s.io/api/core/v1/generated.proto";
 import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/generated.proto";
@@ -65,7 +65,7 @@ message PackageRevisionDependency {
   optional k8s.io.api.core.v1.ObjectReference ref = 2;
 
   // PackageDependencies define the package dependencies the reference depend upon (repository, realm, package, (revision)
-  repeated github.com.pkgserver_dev.pkgserver.apis.pkgid.Upstream packageDependencies = 3;
+  repeated github.com.pkgserver_dev.pkgserver.apis.pkgrevid.Upstream packageDependencies = 3;
 
   // RuntimeDependencies define the runtime dependencies the reference depend upon (apiversion, kind, namespace, name)
   repeated k8s.io.api.core.v1.ObjectReference runtimeDependencies = 4;
@@ -108,7 +108,7 @@ message PackageRevisionResourcesList {
 
 // PackageRevisionResourcesSpec defines the desired state of PackageRevisionResources
 message PackageRevisionResourcesSpec {
-  optional github.com.pkgserver_dev.pkgserver.apis.pkgid.PackageID packageID = 6;
+  optional github.com.pkgserver_dev.pkgserver.apis.pkgrevid.PackageRevID packageRevID = 6;
 
   // Resources define the content of the resources key is the name of the KRM file,
   // value defines the the content of the KRM reource
@@ -124,7 +124,7 @@ message PackageRevisionResourcesStatus {
 
 // PackageRevisionSpec defines the desired state of PackageRevision
 message PackageRevisionSpec {
-  optional github.com.pkgserver_dev.pkgserver.apis.pkgid.PackageID packageID = 1;
+  optional github.com.pkgserver_dev.pkgserver.apis.pkgrevid.PackageRevID packageRevID = 1;
 
   // Lifecycle defines the lifecycle of the resource
   optional string lifecycle = 2;
@@ -141,8 +141,8 @@ message PackageRevisionSpec {
   // ready for approval
   repeated github.com.pkgserver_dev.pkgserver.apis.condition.ReadinessGate readinessGates = 5;
 
-  // Upstream identifies the upstream this package is originated from
-  optional github.com.pkgserver_dev.pkgserver.apis.pkgid.Upstream upstream = 6;
+  // Upstream identifies the upstream package this package is originated from
+  optional github.com.pkgserver_dev.pkgserver.apis.pkgrevid.Upstream upstream = 6;
 
   // Inputs define the inputs defined for the PackageContext
   // +kubebuilder:pruning:PreserveUnknownFields

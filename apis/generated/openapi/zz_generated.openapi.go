@@ -58,9 +58,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1.PackageRevisionSpec":            schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionSpec(ref),
 		"github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1.PackageRevisionStatus":          schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionStatus(ref),
 		"github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1.Task":                           schema_pkgserver_apis_pkg_v1alpha1_Task(ref),
-		"github.com/pkgserver-dev/pkgserver/apis/pkgid.Downstream":                            schema_pkgserver_dev_pkgserver_apis_pkgid_Downstream(ref),
-		"github.com/pkgserver-dev/pkgserver/apis/pkgid.PackageID":                             schema_pkgserver_dev_pkgserver_apis_pkgid_PackageID(ref),
-		"github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream":                              schema_pkgserver_dev_pkgserver_apis_pkgid_Upstream(ref),
+		"github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Downstream":                         schema_pkgserver_dev_pkgserver_apis_pkgrevid_Downstream(ref),
+		"github.com/pkgserver-dev/pkgserver/apis/pkgrevid.PackageRevID":                       schema_pkgserver_dev_pkgserver_apis_pkgrevid_PackageRevID(ref),
+		"github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream":                           schema_pkgserver_dev_pkgserver_apis_pkgrevid_Upstream(ref),
 		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                 schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
 		"k8s.io/api/core/v1.Affinity":                                                         schema_k8sio_api_core_v1_Affinity(ref),
 		"k8s.io/api/core/v1.AttachedVolume":                                                   schema_k8sio_api_core_v1_AttachedVolume(ref),
@@ -697,14 +697,14 @@ func schema_pkgserver_apis_config_v1alpha1_PackageVariantSpec(ref common.Referen
 						SchemaProps: spec.SchemaProps{
 							Description: "Upstream defines the upstream PackageRevision reference",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream"),
+							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream"),
 						},
 					},
 					"downstream": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Downstream defines the downstream Package information",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.Downstream"),
+							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Downstream"),
 						},
 					},
 					"packageContext": {
@@ -730,7 +730,7 @@ func schema_pkgserver_apis_config_v1alpha1_PackageVariantSpec(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1.PackageContext", "github.com/pkgserver-dev/pkgserver/apis/pkgid.Downstream", "github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream"},
+			"github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1.PackageContext", "github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Downstream", "github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream"},
 	}
 }
 
@@ -1072,7 +1072,7 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionDependency(ref common.Ref
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream"),
+										Ref: ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream"),
 									},
 								},
 							},
@@ -1095,7 +1095,7 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionDependency(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream", "k8s.io/api/core/v1.ObjectReference"},
+			"github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream", "k8s.io/api/core/v1.ObjectReference"},
 	}
 }
 
@@ -1278,10 +1278,10 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionResourcesSpec(ref common.
 				Description: "PackageRevisionResourcesSpec defines the desired state of PackageRevisionResources",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"packageID": {
+					"packageRevID": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.PackageID"),
+							Ref:     ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.PackageRevID"),
 						},
 					},
 					"resources": {
@@ -1301,11 +1301,11 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionResourcesSpec(ref common.
 						},
 					},
 				},
-				Required: []string{"packageID"},
+				Required: []string{"packageRevID"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/pkgserver-dev/pkgserver/apis/pkgid.PackageID"},
+			"github.com/pkgserver-dev/pkgserver/apis/pkgrevid.PackageRevID"},
 	}
 }
 
@@ -1345,10 +1345,10 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionSpec(ref common.Reference
 				Description: "PackageRevisionSpec defines the desired state of PackageRevision",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"packageID": {
+					"packageRevID": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.PackageID"),
+							Ref:     ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.PackageRevID"),
 						},
 					},
 					"lifecycle": {
@@ -1395,8 +1395,8 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionSpec(ref common.Reference
 					},
 					"upstream": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Upstream identifies the upstream this package is originated from",
-							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream"),
+							Description: "Upstream identifies the upstream package this package is originated from",
+							Ref:         ref("github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream"),
 						},
 					},
 					"inputs": {
@@ -1414,11 +1414,11 @@ func schema_pkgserver_apis_pkg_v1alpha1_PackageRevisionSpec(ref common.Reference
 						},
 					},
 				},
-				Required: []string{"packageID"},
+				Required: []string{"packageRevID"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/pkgserver-dev/pkgserver/apis/condition.ReadinessGate", "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1.Task", "github.com/pkgserver-dev/pkgserver/apis/pkgid.PackageID", "github.com/pkgserver-dev/pkgserver/apis/pkgid.Upstream", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/pkgserver-dev/pkgserver/apis/condition.ReadinessGate", "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1.Task", "github.com/pkgserver-dev/pkgserver/apis/pkgrevid.PackageRevID", "github.com/pkgserver-dev/pkgserver/apis/pkgrevid.Upstream", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -1490,7 +1490,7 @@ func schema_pkgserver_apis_pkg_v1alpha1_Task(ref common.ReferenceCallback) commo
 	}
 }
 
-func schema_pkgserver_dev_pkgserver_apis_pkgid_Downstream(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkgserver_dev_pkgserver_apis_pkgrevid_Downstream(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1530,7 +1530,7 @@ func schema_pkgserver_dev_pkgserver_apis_pkgid_Downstream(ref common.ReferenceCa
 	}
 }
 
-func schema_pkgserver_dev_pkgserver_apis_pkgid_PackageID(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkgserver_dev_pkgserver_apis_pkgrevid_PackageRevID(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1584,7 +1584,7 @@ func schema_pkgserver_dev_pkgserver_apis_pkgid_PackageID(ref common.ReferenceCal
 	}
 }
 
-func schema_pkgserver_dev_pkgserver_apis_pkgid_Upstream(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkgserver_dev_pkgserver_apis_pkgrevid_Upstream(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{

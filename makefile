@@ -62,13 +62,13 @@ genclients:
 		-g openapi-gen \
 		-g go-to-protobuf \
 		--module $(REPO) \
-		--versions $(REPO)/apis/pkg/v1alpha1,$(REPO)/apis/config/v1alpha1,$(REPO)/apis/pkgid,$(REPO)/apis/condition
+		--versions $(REPO)/apis/pkg/v1alpha1,$(REPO)/apis/config/v1alpha1,$(REPO)/apis/pkgrevid,$(REPO)/apis/condition
 
 #		-g go-to-protobuf \
 
 .PHONY: generate
 generate: controller-gen 
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/pkgid/..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/pkgrevid/..."
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/condition/..."
 	protoc -I . $(shell find ./pkg/ -name '*.proto') --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative
 

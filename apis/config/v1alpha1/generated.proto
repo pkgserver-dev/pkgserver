@@ -20,7 +20,7 @@ syntax = "proto2";
 package github.com.pkgserver_dev.pkgserver.apis.config.v1alpha1;
 
 import "github.com/pkgserver-dev/pkgserver/apis/condition/generated.proto";
-import "github.com/pkgserver-dev/pkgserver/apis/pkgid/generated.proto";
+import "github.com/pkgserver-dev/pkgserver/apis/pkgrevid/generated.proto";
 import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/schema/generated.proto";
@@ -94,10 +94,10 @@ message PackageVariantList {
 // PackageVariantSpec defines the desired state of PackageVariant
 message PackageVariantSpec {
   // Upstream defines the upstream PackageRevision reference
-  optional github.com.pkgserver_dev.pkgserver.apis.pkgid.Upstream upstream = 1;
+  optional github.com.pkgserver_dev.pkgserver.apis.pkgrevid.Upstream upstream = 1;
 
   // Downstream defines the downstream Package information
-  optional github.com.pkgserver_dev.pkgserver.apis.pkgid.Downstream downstream = 2;
+  optional github.com.pkgserver_dev.pkgserver.apis.pkgrevid.Downstream downstream = 2;
 
   // PackageContext defines the context of the PackageVariant
   optional PackageContext packageContext = 3;

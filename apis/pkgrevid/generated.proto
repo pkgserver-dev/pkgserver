@@ -17,10 +17,10 @@ limitations under the License.
 
 syntax = "proto2";
 
-package github.com.pkgserver_dev.pkgserver.apis.pkgid;
+package github.com.pkgserver_dev.pkgserver.apis.pkgrevid;
 
 // Package-wide variables from generator "generated".
-option go_package = "github.com/pkgserver-dev/pkgserver/apis/pkgid";
+option go_package = "github.com/pkgserver-dev/pkgserver/apis/pkgrevid";
 
 // +k8s:openapi-gen=true
 message Downstream {
@@ -39,7 +39,7 @@ message Downstream {
 }
 
 // +k8s:openapi-gen=true
-message PackageID {
+message PackageRevID {
   // Target defines the target for the package; not relevant for catalog packages
   // e.g. a cluster
   optional string target = 1;
