@@ -12,6 +12,7 @@ certificates/*
 test
 test/*
 scripts
+dist
 
 
 # Test binary, built with `go test -c`

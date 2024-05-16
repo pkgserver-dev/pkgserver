@@ -63,7 +63,7 @@ type PackageRevisionSpec struct {
 	// ReadinessGates define the conditions that need to be acted upon before considering the PackageRevision
 	// ready for approval
 	ReadinessGates []condition.ReadinessGate `json:"readinessGates,omitempty" protobuf:"bytes,5,rep,name=readinessGates"`
-	// Upstream identifies the upstream this package is originated from
+	// Upstream identifies the upstream package this package is originated from
 	Upstream *pkgid.Upstream `json:"upstream,omitempty" protobuf:"bytes,6,opt,name=upstream"`
 	// Inputs define the inputs defined for the PackageContext
 	//+kubebuilder:pruning:PreserveUnknownFields
