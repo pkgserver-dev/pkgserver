@@ -24,9 +24,8 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/pkgcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/secretcmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -75,16 +74,15 @@ func GetMain(ctx context.Context) *cobra.Command {
 	}
 
 	//pf := cmd.PersistentFlags()
-	
 
 	kubeflags := genericclioptions.NewConfigFlags(true)
 	kubeflags.AddFlags(cmd.PersistentFlags())
 
-	pkgctlflags := apis.NewConfigFlags(true)
-	pkgctlflags.AddFlags(cmd.PersistentFlags())
+	//pkgctlflags := apis.NewConfigFlags(true)
+	//pkgctlflags.AddFlags(cmd.PersistentFlags())
 
 	kubeflags.WrapConfigFn = func(rc *rest.Config) *rest.Config {
-		rc.UserAgent = fmt.Sprintf("pkg/%s", version)
+		rc.UserAgent = fmt.Sprintf("pkgctl/%s", version)
 		return rc
 	}
 
@@ -93,9 +91,9 @@ func GetMain(ctx context.Context) *cobra.Command {
 	// initialize viper settings
 	initConfig()
 
-	cmd.AddCommand(pkgcmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
-	cmd.AddCommand(secretcmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
-	cmd.AddCommand(repocmd.GetCommand(ctx, version, kubeflags, pkgctlflags))
+	cmd.AddCommand(rpkgcmd.GetCommand(ctx, version, kubeflags))
+	cmd.AddCommand(secretcmd.GetCommand(ctx, version, kubeflags))
+	cmd.AddCommand(repocmd.GetCommand(ctx, version, kubeflags))
 	//cmd.PersistentFlags().StringVar(&configFile, "config", "c", fmt.Sprintf("Default config file (%s/%s/%s.%s)", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt))
 
 	return cmd

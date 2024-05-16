@@ -24,7 +24,6 @@ import (
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +31,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "create PKGREV[<Target>.<REPO>.<REALM>.<PACKAGE>.<WORKSPACE>] [flags]",
@@ -46,7 +45,6 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
-	r.local = *pkgctlcfg.Local
 
 	r.Command.Flags().StringVar(
 		&r.source, "src", "", "source from which the pkg should be cloned")
@@ -54,8 +52,8 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags).Command
 }
 
 type Runner struct {
@@ -63,20 +61,14 @@ type Runner struct {
 	cfg     *genericclioptions.ConfigFlags
 	client  client.Client
 	source  string
-	local   bool
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
-	if !r.local {
-		client, err := client.CreateClientWithFlags(r.cfg)
-		if err != nil {
-			return err
-		}
-		r.client = client
-	} else {
-		return fmt.Errorf("this command only excecutes on k8s, got: %t", r.local)
+	client, err := client.CreateClientWithFlags(r.cfg)
+	if err != nil {
+		return err
 	}
-
+	r.client = client
 	return nil
 }
 

@@ -35,6 +35,13 @@ const (
 	PackageRevisionLifecycleDeletionProposed PackageRevisionLifecycle = "deletionProposed"
 )
 
+var PackageRevisionLifecycles = []PackageRevisionLifecycle{
+	PackageRevisionLifecycleDraft,
+	PackageRevisionLifecycleProposed,
+	PackageRevisionLifecyclePublished,
+	PackageRevisionLifecycleDeletionProposed,
+}
+
 type TaskType string
 
 const (

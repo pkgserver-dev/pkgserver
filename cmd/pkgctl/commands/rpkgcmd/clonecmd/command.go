@@ -16,6 +16,9 @@ limitations under the License.
 
 package clonecmd
 
+// TODO MOVE TO LOCAL ONLY
+/*
+
 import (
 	"context"
 	"fmt"
@@ -36,7 +39,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "clone PKGREV[<Target>.<REPO>.<REALM>.<PACKAGE>.<WORKSPACE>] [LOCAL_DST_DIRECTORY] [flags]",
@@ -51,15 +54,14 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
-	r.local = *pkgctlcfg.Local
 	r.Command.Flags().StringVar(
 		&r.revision, "revision", "", "revision of the package to be cloned")
 
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags).Command
 }
 
 type Runner struct {
@@ -96,7 +98,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		dir = args[2]
 	}
 
-	if r.local {
 		repoName := pkgID.Repository
 		var repo apis.Repo
 		if err := viper.UnmarshalKey(fmt.Sprintf("repos.%s", repoName), &repo); err != nil {
@@ -105,14 +106,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		if r.revision != "" {
 			pkgID.Revision = r.revision
 		}
-		/*
-			var tag string
-			branch := pkgID.Branch(catalog)
-			if r.revision != "" {
-				pkgID.Revision = r.revision
-				tag = pkgID.Tag(catalog)
-			}
-		*/
 
 		reader := pkgio.GitReader{
 			URL:        repo.URL,
@@ -132,29 +125,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		}
 
 		return w.Write(ctx, datastore)
-	} else {
-		r.validateUpstream(ctx, pkgID)
-		// map to the datastore and use the generic writer
-	}
-	return nil
+	
 }
 
-func (r *Runner) validateUpstream(ctx context.Context, pkgID *pkgid.PackageID) error {
-
-	pkgRevList := pkgv1alpha1.PackageRevisionList{}
-	if err := r.client.List(ctx, &pkgRevList); err != nil {
-		return err
-	}
-
-	for _, pkgRev := range pkgRevList.Items {
-		if pkgRev.Spec.PackageID.Repository == pkgID.Repository &&
-			pkgRev.Spec.PackageID.Package == pkgID.Package &&
-			pkgRev.Spec.PackageID.Revision == pkgID.Revision {
-			if pkgRev.GetCondition(condition.ConditionTypeReady).Status == metav1.ConditionTrue {
-				return nil
-			}
-			return fmt.Errorf("pkg %s not ready", pkgRev.Name)
-		}
-	}
-	return fmt.Errorf("upstream pkg %s not found", pkgID.PkgRevString())
-}
+*/

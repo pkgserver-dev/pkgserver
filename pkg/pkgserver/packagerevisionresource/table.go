@@ -35,6 +35,8 @@ func NewTableConvertor(gr schema.GroupResource) registry.TableConvertor {
 			return []interface{}{
 				prr.Name,
 				prr.Spec.PackageID.Repository,
+				prr.Spec.PackageID.Target,
+				prr.Spec.PackageID.Realm,
 				prr.Spec.PackageID.Package,
 				prr.Spec.PackageID.Revision,
 				prr.Spec.PackageID.Workspace,
@@ -44,6 +46,8 @@ func NewTableConvertor(gr schema.GroupResource) registry.TableConvertor {
 		Columns: []metav1.TableColumnDefinition{
 			{Name: "Name", Type: "string"},
 			{Name: "Repository", Type: "string"},
+			{Name: "Realm", Type: "string"},
+			{Name: "Package", Type: "string"},
 			{Name: "Package", Type: "string"},
 			{Name: "Revision", Type: "string"},
 			{Name: "workspace", Type: "string"},

@@ -21,7 +21,6 @@ import (
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/secretcmd/createcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/secretcmd/deletecmd"
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func GetCommand(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
+func GetCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "secret",
 		//Short:   docs.InitShort,
@@ -48,8 +47,8 @@ func GetCommand(ctx context.Context, version string, cfg *genericclioptions.Conf
 	}
 
 	cmd.AddCommand(
-		createcmd.NewCommand(ctx, version, cfg, pkgctlcfg),
-		deletecmd.NewCommand(ctx, version, cfg, pkgctlcfg),
+		createcmd.NewCommand(ctx, version, kubeflags),
+		deletecmd.NewCommand(ctx, version, kubeflags),
 	)
 	return cmd
 }

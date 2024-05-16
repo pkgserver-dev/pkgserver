@@ -412,7 +412,7 @@ spec:
         image: europe-docker.pkg.dev/srlinux/eu.gcr.io/pkg-server:latest
         imagePullPolicy: Always
         command:
-        - /app/pkg-server
+        - /app/pkgserver
         args:
         - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
         - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"

@@ -18,29 +18,19 @@ package approvecmd
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
 	"github.com/henderiw/logger/log"
-	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
-	"github.com/pkgserver-dev/pkgserver/pkg/auth/ui"
-	viperauth "github.com/pkgserver-dev/pkgserver/pkg/auth/viper"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
-	"github.com/pkgserver-dev/pkgserver/pkg/git/pkg"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
+func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "approve PKGREV[<Target>.<REPO>.<REALM>.<PACKAGE>.<WORKSPACE>] [flags]",
@@ -54,33 +44,29 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 
 	r.Command = cmd
 	r.cfg = cfg
-	r.local = *pkgctlcfg.Local
 	r.Command.Flags().StringVar(
 		&r.revision, "revision", "", "revision of the package to be cloned")
 
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags).Command
 }
 
 type Runner struct {
 	Command  *cobra.Command
 	cfg      *genericclioptions.ConfigFlags
 	client   client.Client
-	local    bool
 	revision string
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
-	if !r.local {
-		client, err := client.CreateClientWithFlags(r.cfg)
-		if err != nil {
-			return err
-		}
-		r.client = client
+	client, err := client.CreateClientWithFlags(r.cfg)
+	if err != nil {
+		return err
 	}
+	r.client = client
 
 	return nil
 }
@@ -95,20 +81,18 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		namespace = *r.cfg.Namespace
 	}
 
-	fmt.Println("local", r.local)
-
 	pkgRevName := args[0]
-	if !r.local {
-		// fetch the package revision
-		pkgRev := &pkgv1alpha1.PackageRevision{}
-		if err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: pkgRevName}, pkgRev); err != nil {
-			return err
-		}
+	// fetch the package revision
+	pkgRev := &pkgv1alpha1.PackageRevision{}
+	if err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: pkgRevName}, pkgRev); err != nil {
+		return err
+	}
 
-		pkgRev.Spec.Tasks = []pkgv1alpha1.Task{}
-		pkgRev.Spec.Lifecycle = pkgv1alpha1.PackageRevisionLifecyclePublished
-		return r.client.Update(ctx, pkgRev)
-	} else {
+	pkgRev.Spec.Tasks = []pkgv1alpha1.Task{}
+	pkgRev.Spec.Lifecycle = pkgv1alpha1.PackageRevisionLifecyclePublished
+	return r.client.Update(ctx, pkgRev)
+	// TODO Move this to local pkg command
+	/*
 		if r.revision == "" {
 			return fmt.Errorf("a revision is required for approving a package client side")
 		}
@@ -169,7 +153,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		if err := cachedRepo.EnsurePackageRevision(ctx, pkgRev); err != nil {
 			return err
 		}
+	*/
 
-		return nil
-	}
 }

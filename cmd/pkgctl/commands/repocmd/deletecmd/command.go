@@ -23,7 +23,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/henderiw/logger/log"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +30,7 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
+func NewRunner(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "delete NAME",
@@ -44,27 +43,26 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 	}
 
 	r.Command = cmd
-	r.cfg = cfg
-	r.local = *pkgctlcfg.Local
+	r.kubeflags = kubeflags
 
 	r.Command.Flags().StringVarP(
 		&r.secret, "secret", "", "", "secret used for accessing the repository")
 	r.Command.Flags().BoolVarP(
 		&r.deployment, "deployment", "d", false, "tags the repository as a deployment repository. packages in a deployment repository are considered for deployment dependeing on their lifecycle status")
 	r.Command.Flags().StringVarP(
-		&r.directory, "directory", "", "", "the directory withing the repository")
+		&r.directory, "directory", "", "", "the directory within the repository")
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *cobra.Command {
-	return NewRunner(ctx, version, kubeflags, pkgctlcfg).Command
+func NewCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
+	return NewRunner(ctx, version, kubeflags).Command
 }
 
 type Runner struct {
-	Command *cobra.Command
-	cfg     *genericclioptions.ConfigFlags
-	client  client.Client
-	local   bool
+	Command   *cobra.Command
+	kubeflags *genericclioptions.ConfigFlags
+	client    client.Client
+	local     bool
 	// dynamic input
 	secret     string
 	deployment bool
@@ -72,7 +70,7 @@ type Runner struct {
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
-	client, err := client.CreateClientWithFlags(r.cfg)
+	client, err := client.CreateClientWithFlags(r.kubeflags)
 	if err != nil {
 		return err
 	}

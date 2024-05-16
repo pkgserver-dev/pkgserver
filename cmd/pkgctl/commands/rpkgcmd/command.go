@@ -14,15 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package repocmd
+package rpkgcmd
 
 import (
 	"context"
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd/createcmd"
-	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/repocmd/deletecmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/createcmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/deletecmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/getcmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/updatestatuscmd"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -30,7 +32,7 @@ import (
 // NewRunner returns a command runner.
 func GetCommand(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "repo",
+		Use: "rpkg",
 		//Short:   docs.InitShort,
 		//Long:    docs.InitShort + "\n" + docs.InitLong,
 		//Example: docs.InitExamples,
@@ -47,8 +49,15 @@ func GetCommand(ctx context.Context, version string, kubeflags *genericclioption
 	}
 
 	cmd.AddCommand(
+		//approvecmd.NewCommand(ctx, version, kubeflags),
+		//clonecmd.NewCommand(ctx, version, kubeflags),
+		getcmd.NewCommand(ctx, version, kubeflags),
 		createcmd.NewCommand(ctx, version, kubeflags),
 		deletecmd.NewCommand(ctx, version, kubeflags),
+		updatestatuscmd.NewCommand(ctx, version, kubeflags),
+		////proposecmd.NewCommand(ctx, version, kubeflags),
+		////proposedeletecmd.NewCommand(ctx, version, kubeflags),
+		//pushcmd.NewCommand(ctx, version, kubeflags),
 	)
 	return cmd
 }
