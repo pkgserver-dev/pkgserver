@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pkgid
+package pkgrevid
 
 import "path"
 
@@ -31,7 +31,7 @@ type Upstream struct {
 }
 
 func (r *Upstream) PkgRevName() string {
-	pkgID := &PackageID{}
+	pkgID := &PackageRevID{}
 	return pkgID.PkgRevString()
 }
 

@@ -28,7 +28,7 @@ import (
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/cache"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
@@ -121,7 +121,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// get the repo key
 	repokey := types.NamespacedName{
 		Namespace: cr.Namespace,
-		Name:      cr.Spec.PackageID.Repository}
+		Name:      cr.Spec.PackageRevID.Repository}
 
 	if !cr.GetDeletionTimestamp().IsZero() {
 		if cr.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished {
@@ -217,11 +217,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					"Error", "error %s", err.Error())
 				return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 			}
-			log.Info("upsert cr", "pkgID", cr.Spec.PackageID)
-			if cr.Spec.PackageID.Revision == "" {
+			log.Info("upsert cr", "pkgID", cr.Spec.PackageRevID)
+			if cr.Spec.PackageRevID.Revision == "" {
 				// allocate a revision
 
-				repoPkgRevs, err := cachedRepo.ListPackageRevisions(ctx, &repository.ListOption{PackageID: &cr.Spec.PackageID})
+				repoPkgRevs, err := cachedRepo.ListPackageRevisions(ctx, &repository.ListOption{PackagerevID: &cr.Spec.PackageRevID})
 				if err != nil {
 					log.Error("cannot list repo pkgrevs", "error", err.Error())
 					cr.SetConditions(condition.Failed(err.Error()))
@@ -233,7 +233,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 				opts := []client.ListOption{
 					client.InNamespace(cr.Namespace),
-					//client.MatchingFields{"spec.packageID.package": cr.Spec.PackageID.Package},
+					//client.MatchingFields{"spec.packageRevID.package": cr.Spec.packageRevID.Package},
 				}
 				storedPkgRevs := &pkgv1alpha1.PackageRevisionList{}
 				if err := r.List(ctx, storedPkgRevs, opts...); err != nil {
@@ -248,30 +248,30 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				allocatedRevisions := sets.New[string]()
 				for _, pkgRev := range repoPkgRevs {
 					pkgRev := pkgRev
-					if pkgRev.Spec.PackageID.Repository == cr.Spec.PackageID.Repository &&
-						pkgRev.Spec.PackageID.Target == cr.Spec.PackageID.Target &&
-						pkgRev.Spec.PackageID.Realm == cr.Spec.PackageID.Realm &&
-						pkgRev.Spec.PackageID.Package == cr.Spec.PackageID.Package {
-						if pkgRev.Spec.PackageID.Revision != "" {
-							allocatedRevisions.Insert(pkgRev.Spec.PackageID.Revision)
-							log.Info("published repo packages", "name", pkgRev.Name, "revision", pkgRev.Spec.PackageID.Revision)
+					if pkgRev.Spec.PackageRevID.Repository == cr.Spec.PackageRevID.Repository &&
+						pkgRev.Spec.PackageRevID.Target == cr.Spec.PackageRevID.Target &&
+						pkgRev.Spec.PackageRevID.Realm == cr.Spec.PackageRevID.Realm &&
+						pkgRev.Spec.PackageRevID.Package == cr.Spec.PackageRevID.Package {
+						if pkgRev.Spec.PackageRevID.Revision != "" {
+							allocatedRevisions.Insert(pkgRev.Spec.PackageRevID.Revision)
+							log.Info("published repo packages", "name", pkgRev.Name, "revision", pkgRev.Spec.PackageRevID.Revision)
 						}
 
 					}
 				}
 				for _, pkgRev := range storedPkgRevs.Items {
 					pkgRev := pkgRev
-					if pkgRev.Spec.PackageID.Repository == cr.Spec.PackageID.Repository &&
-						pkgRev.Spec.PackageID.Target == cr.Spec.PackageID.Target &&
-						pkgRev.Spec.PackageID.Realm == cr.Spec.PackageID.Realm &&
-						pkgRev.Spec.PackageID.Package == cr.Spec.PackageID.Package {
-						if pkgRev.Spec.PackageID.Revision != "" {
-							allocatedRevisions.Insert(pkgRev.Spec.PackageID.Revision)
-							log.Info("published stored packages", "name", pkgRev.Name, "revision", pkgRev.Spec.PackageID.Revision)
+					if pkgRev.Spec.PackageRevID.Repository == cr.Spec.PackageRevID.Repository &&
+						pkgRev.Spec.PackageRevID.Target == cr.Spec.PackageRevID.Target &&
+						pkgRev.Spec.PackageRevID.Realm == cr.Spec.PackageRevID.Realm &&
+						pkgRev.Spec.PackageRevID.Package == cr.Spec.PackageRevID.Package {
+						if pkgRev.Spec.PackageRevID.Revision != "" {
+							allocatedRevisions.Insert(pkgRev.Spec.PackageRevID.Revision)
+							log.Info("published stored packages", "name", pkgRev.Name, "revision", pkgRev.Spec.PackageRevID.Revision)
 						}
 					}
 				}
-				nextRev, err := pkgid.NextRevisionNumber(allocatedRevisions.UnsortedList())
+				nextRev, err := pkgrevid.NextRevisionNumber(allocatedRevisions.UnsortedList())
 				if err != nil {
 					cr.SetConditions(condition.Failed(err.Error()))
 					r.recorder.Eventf(cr, corev1.EventTypeWarning,
@@ -279,7 +279,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 				}
 				log.Info("published package", "nextRev", nextRev)
-				cr.Spec.PackageID.Revision = nextRev
+				cr.Spec.PackageRevID.Revision = nextRev
 				if err := r.Update(ctx, cr); err != nil {
 					//log.Error("cannot update packagerevision", "error", err)
 					cr.SetConditions(condition.Failed(err.Error()))
@@ -335,7 +335,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					pkgRevResources := pkgv1alpha1.BuildPackageRevisionResources(
 						cr.ObjectMeta,
 						pkgv1alpha1.PackageRevisionResourcesSpec{
-							PackageID: *cr.Spec.PackageID.DeepCopy(),
+							packageRevID: *cr.Spec.packageRevID.DeepCopy(),
 							Resources: resources,
 						},
 						pkgv1alpha1.PackageRevisionResourcesStatus{},
@@ -387,17 +387,17 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 }
 
-func (r *reconciler) getResources(ctx context.Context, cr *pkgv1alpha1.PackageRevision, upstream *pkgid.Upstream) (map[string]string, error) {
+func (r *reconciler) getResources(ctx context.Context, cr *pkgv1alpha1.PackageRevision, upstream *pkgrevid.Upstream) (map[string]string, error) {
 	log := log.FromContext(ctx)
 
 	/*
 		opts := []client.ListOption{
 			client.InNamespace(cr.Namespace),
 			client.MatchingFields{
-				"spec.packageID.repository": upstream.Repository,
-				"spec.packageID.realm":      upstream.Realm,
-				"spec.packageID.package":    upstream.Package,
-				"spec.packageID.revision":   upstream.Revision,
+				"spec.packageRevID.repository": upstream.Repository,
+				"spec.packageRevID.realm":      upstream.Realm,
+				"spec.packageRevID.package":    upstream.Package,
+				"spec.packageRevID.revision":   upstream.Revision,
 			},
 		}
 		pkgRevList := &pkgv1alpha1.PackageRevisionResourcesList{}
@@ -427,11 +427,11 @@ func (r *reconciler) getResources(ctx context.Context, cr *pkgv1alpha1.PackageRe
 	var upstreamPkgRev *pkgv1alpha1.PackageRevision
 	for _, pkgRev := range pkgRevList.Items {
 		pkgRev := pkgRev
-		if pkgRev.Spec.PackageID.Target == pkgid.PkgTarget_Catalog &&
-			pkgRev.Spec.PackageID.Repository == upstream.Repository &&
-			pkgRev.Spec.PackageID.Realm == upstream.Realm &&
-			pkgRev.Spec.PackageID.Package == upstream.Package &&
-			pkgRev.Spec.PackageID.Revision == upstream.Revision {
+		if pkgRev.Spec.PackageRevID.Target == pkgrevid.PkgTarget_Catalog &&
+			pkgRev.Spec.PackageRevID.Repository == upstream.Repository &&
+			pkgRev.Spec.PackageRevID.Realm == upstream.Realm &&
+			pkgRev.Spec.PackageRevID.Package == upstream.Package &&
+			pkgRev.Spec.PackageRevID.Revision == upstream.Revision {
 			// found
 			upstreamPkgRev = &pkgRev
 			break
@@ -475,7 +475,7 @@ func (r *reconciler) getResources(ctx context.Context, cr *pkgv1alpha1.PackageRe
 
 		return srcCachedRepo.GetResources(ctx, &pkgv1alpha1.PackageRevision{
 			Spec: pkgv1alpha1.PackageRevisionSpec{
-				PackageID: pkgid.PackageID{
+				packageRevID: pkgid.packageRevID{
 					Target:     pkgid.PkgTarget_Catalog,
 					Repository: upstream.Repository,
 					Realm:      upstream.Realm,
@@ -495,7 +495,7 @@ func (r *reconciler) getRepo(ctx context.Context, cr *pkgv1alpha1.PackageRevisio
 	log := log.FromContext(ctx)
 	repokey := types.NamespacedName{
 		Namespace: cr.Namespace,
-		Name:      cr.Spec.PackageID.Repository}
+		Name:      cr.Spec.PackageRevID.Repository}
 
 	repo := &configv1alpha1.Repository{}
 	if err := r.Get(ctx, repokey, repo); err != nil {

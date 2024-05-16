@@ -72,8 +72,8 @@ func (r *commitHelper) Initialize(ctx context.Context, repoDir string, pkgRev *p
 	// based on the parent commit get the package resources from the parent commit
 	// it could return an nil pointer in which case no resources were found
 	// hence we translate it in a ZeroHash
-	r.packagePath = filepath.Join(repoDir, pkgRev.Spec.PackageID.Path())
-	packageTree, err := getPackageTree(ctx, pkgRev.Spec.PackageID, r.parentCommit)
+	r.packagePath = filepath.Join(repoDir, pkgRev.Spec.PackageRevID.Path())
+	packageTree, err := getPackageTree(ctx, pkgRev.Spec.PackageRevID, r.parentCommit)
 	if err != nil {
 		return err
 	}

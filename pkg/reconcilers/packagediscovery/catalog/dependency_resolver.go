@@ -28,7 +28,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	claimv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/claim/v1alpha1"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"golang.org/x/mod/semver"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -56,7 +56,7 @@ func getKey(ns string, name string) storebackend.Key {
 	)
 }
 
-func newDependencyResolver(recorder recorder.Recorder[diag.Diagnostic], catalogAPIStore storebackend.Storer[*API], catalogGRMap storebackend.Storer[string], pkgID pkgid.PackageID) *dependencyResolver {
+func newDependencyResolver(recorder recorder.Recorder[diag.Diagnostic], catalogAPIStore storebackend.Storer[*API], catalogGRMap storebackend.Storer[string], pkgID pkgrevid.PackageRevID) *dependencyResolver {
 	return &dependencyResolver{
 		recorder:        recorder,
 		catalogAPIStore: catalogAPIStore,
@@ -153,7 +153,7 @@ func (r *dependencyResolver) resolve(ctx context.Context, packages, inputs, reso
 			Group:   gv.Group,
 			Version: gv.Version,
 			Kind:    kind,
-		}, pkgid.Upstream{Repository: "tbd", Revision: "*", Realm: "", Package: "tbd"})
+		}, pkgrevid.Upstream{Repository: "tbd", Revision: "*", Realm: "", Package: "tbd"})
 
 	}
 	r.dependency.AddResolutionError(r.recorder.Get().Error())
@@ -244,7 +244,7 @@ func (r *dependencyResolver) addPolicyRuleDependencies(ctx context.Context, gvk 
 					Kind:    kind,
 				}
 				//api.PkgID = *api.PkgID.DeepCopy()
-				if api.PkgID.PkgString() != r.dependency.PkgString() {
+				if api.PkgRevID.PkgString() != r.dependency.PkgString() {
 					r.addDependency(gvk, api)
 				}
 			}
@@ -331,10 +331,10 @@ func (r *dependencyResolver) addDependency(gvk schema.GroupVersionKind, api *API
 		return
 	}
 
-	upstream := pkgid.Upstream{
-		Repository: api.PkgID.Repository,
-		Realm:      api.PkgID.Realm,
-		Package:    api.PkgID.Package,
+	upstream := pkgrevid.Upstream{
+		Repository: api.PkgRevID.Repository,
+		Realm:      api.PkgRevID.Realm,
+		Package:    api.PkgRevID.Package,
 		Revision:   "*",
 	}
 	r.dependency.AddPkgDependency(gvk, upstream)
@@ -345,6 +345,6 @@ func (r *dependencyResolver) ListCoreDependencies() []schema.GroupVersionKind {
 
 }
 
-func (r *dependencyResolver) ListGVKPkgDependencies() map[schema.GroupVersionKind][]pkgid.Upstream {
+func (r *dependencyResolver) ListGVKPkgDependencies() map[schema.GroupVersionKind][]pkgrevid.Upstream {
 	return r.dependency.ListGVKPkgDependencies()
 }

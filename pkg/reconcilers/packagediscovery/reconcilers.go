@@ -29,7 +29,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/pkgserver-dev/pkgserver/apis/generated/clientset/versioned"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
@@ -113,7 +113,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// only look at catalog packages
-	if !strings.HasPrefix(cr.GetName(), pkgid.PkgTarget_Catalog) {
+	if !strings.HasPrefix(cr.GetName(), pkgrevid.PkgTarget_Catalog) {
 		return ctrl.Result{}, nil
 	}
 

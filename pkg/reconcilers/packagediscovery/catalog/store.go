@@ -26,7 +26,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -57,7 +57,7 @@ type API struct {
 	Type     APIType
 	Kind     string
 	Resource string
-	PkgID    pkgid.PackageID
+	PkgRevID pkgrevid.PackageRevID
 	Versions map[string][]string // key is version and value is pkgRev
 }
 
@@ -108,7 +108,7 @@ func (r *Store) DeletePkgRev(ctx context.Context, cr *pkgv1alpha1.PackageRevisio
 	// dont delete the catalogGRMap since this should never change
 
 	// delete the pkgrevision
-	key := getKey(cr.Spec.PackageID.PkgString(), cr.Spec.PackageID.Revision)
+	key := getKey(cr.Spec.PackageRevID.PkgString(), cr.Spec.PackageRevID.Revision)
 	if err := r.catalogPkgStore.Delete(ctx, key); err != nil {
 		log.Error("cannot delete pkgrev from pkgStore")
 		r.recorder.Record(diag.DiagFromErr(err))
@@ -147,12 +147,12 @@ func (r *Store) UpdatePkgRevAPI(ctx context.Context, cr *pkgv1alpha1.PackageRevi
 					Type:     APIType_Package,
 					Kind:     gvkr.kind,
 					Resource: gvkr.resource,
-					PkgID:    cr.Spec.PackageID,
+					PkgRevID: cr.Spec.PackageRevID,
 					Versions: versions, // hold all the version
 				}
 			}
 			api.Type = APIType_Package
-			api.PkgID = cr.Spec.PackageID
+			api.PkgRevID = cr.Spec.PackageRevID
 			// update an existing entry
 			if len(api.Versions) == 0 { // initialize versions if none exist
 				api.Versions = map[string][]string{}
@@ -217,15 +217,15 @@ func (r *Store) UpdatePkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.Pa
 		r.recorder,
 		r.catalogAPIStore,
 		r.catalogGRMap,
-		cr.Spec.PackageID,
+		cr.Spec.PackageRevID,
 	)
 	dep := dr.resolve(ctx, packages, inputs, resources)
-	if err := r.catalogPkgStore.Update(ctx, getKey(cr.Spec.PackageID.PkgString(), cr.Spec.PackageID.Revision), dep); err != nil {
+	if err := r.catalogPkgStore.Update(ctx, getKey(cr.Spec.PackageRevID.PkgString(), cr.Spec.PackageRevID.Revision), dep); err != nil {
 		log.Error("cannot update pkg dependencies")
 	}
 }
 
-func (r *Store) GetPkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.PackageRevision) (bool, []pkgid.Upstream) {
+func (r *Store) GetPkgRevDependencies(ctx context.Context, cr *pkgv1alpha1.PackageRevision) (bool, []pkgrevid.Upstream) {
 	log := log.FromContext(ctx)
 	// the catalog should be fetched using the upstream identifier in the package
 

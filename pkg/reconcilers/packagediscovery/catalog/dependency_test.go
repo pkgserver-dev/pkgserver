@@ -25,7 +25,7 @@ import (
 	memstore "github.com/henderiw/apiserver-store/pkg/storebackend/memory"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	//"sigs.k8s.io/yaml"
 )
@@ -88,8 +88,8 @@ func TestDependencyResolve(t *testing.T) {
 			t.Errorf("cannot get resources, unexpected error\n%s", err.Error())
 		}
 
-		pkgID := pkgid.PackageID{
-			Target:     pkgid.PkgTarget_Catalog,
+		pkgID := pkgrevid.PackageRevID{
+			Target:     pkgrevid.PkgTarget_Catalog,
 			Repository: "dummy",
 			Realm:      "ns1",
 			Package:    "pkg1",

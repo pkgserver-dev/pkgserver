@@ -24,13 +24,13 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/resource"
+	"github.com/pkg/errors"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -112,7 +112,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			cr.SetConditions(condition.Failed("deleting"))
 			r.recorder.Eventf(cr, corev1.EventTypeNormal,
 				"packageVariant", "deleting")
-			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)	
+			return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 		}
 		// remove the finalizer
 		if err := r.finalizer.RemoveFinalizer(ctx, cr); err != nil {
@@ -176,9 +176,9 @@ func (r *reconciler) validateUpstream(ctx context.Context, pvar *configv1alpha1.
 	}
 
 	for _, pkgRev := range pkgRevList.Items {
-		if pkgRev.Spec.PackageID.Repository == pvar.Spec.Upstream.Repository &&
-			pkgRev.Spec.PackageID.Package == pvar.Spec.Upstream.Package &&
-			pkgRev.Spec.PackageID.Revision == pvar.Spec.Upstream.Revision {
+		if pkgRev.Spec.PackageRevID.Repository == pvar.Spec.Upstream.Repository &&
+			pkgRev.Spec.PackageRevID.Package == pvar.Spec.Upstream.Package &&
+			pkgRev.Spec.PackageRevID.Revision == pvar.Spec.Upstream.Revision {
 			if pkgRev.GetCondition(condition.ConditionTypeReady).Status == metav1.ConditionTrue {
 				return nil
 			}
@@ -210,11 +210,11 @@ func (r *reconciler) deletePackageRevisions(ctx context.Context, pkgVar *configv
 		pkgRev := pkgRev
 		log.Info("deleteOrOrphan delete from pkgVar", "pkgRev", pkgRev.Name)
 		done, err := r.deleteOrOrphan(ctx, pkgRev, pkgVar)
-		if  err != nil {
+		if err != nil {
 			log.Error("cannot delete or orphan the pkgRev", "pkgRev", pkgRev.Name)
 			continue
 		}
-		if !done  {
+		if !done {
 			allDone = false
 		}
 	}
@@ -238,7 +238,7 @@ func (r *reconciler) ensurePackageRevision(ctx context.Context, pkgVar *configv1
 	if !exists {
 		pkgRev := buildPackageRevision(ctx, pkgVar, hash)
 		if err := r.Create(ctx, pkgRev); err != nil {
-			log.Error("created packageRevision from pkgVar failed", "pkgRev", pkgRev.Name, "pkgID", pkgRev.Spec.PackageID)
+			log.Error("created packageRevision from pkgVar failed", "pkgRev", pkgRev.Name, "pkgID", pkgRev.Spec.PackageRevID)
 			return err
 		}
 		log.Info("created packageRevision", "pkgRev", pkgRev.Name)
@@ -260,7 +260,7 @@ func (r *reconciler) ensurePackageRevision(ctx context.Context, pkgVar *configv1
 	// delete the packageRevisions that are no longer relevant
 	for _, pkgRev := range pkgRevs {
 		log.Info("deleteOrOrphan ensurePackageRevision", "pkgRev", pkgRev.Name)
-		if pkgRev.Spec.PackageID.Workspace != pkgVar.GetWorkspaceName(hash) {
+		if pkgRev.Spec.PackageRevID.Workspace != pkgVar.GetWorkspaceName(hash) {
 			if _, err := r.deleteOrOrphan(ctx, pkgRev, pkgVar); err != nil {
 				log.Error("cannot delete or orphan the pkgRev", "pkgRev", pkgRev.Name)
 			}
@@ -290,12 +290,12 @@ func (r *reconciler) getDownstreamPRs(ctx context.Context, pkgVar *configv1alpha
 		// delete packageRevisions that were owned but no longer match the
 		// downstream package or repository
 
-		if pkgRev.Spec.PackageID.Target == pkgVar.Spec.Downstream.Target &&
-			pkgRev.Spec.PackageID.Repository == pkgVar.Spec.Downstream.Repository &&
-			pkgRev.Spec.PackageID.Realm == pkgVar.Spec.Downstream.Realm &&
-			pkgRev.Spec.PackageID.Package == pkgVar.Spec.Downstream.Package {
+		if pkgRev.Spec.PackageRevID.Target == pkgVar.Spec.Downstream.Target &&
+			pkgRev.Spec.PackageRevID.Repository == pkgVar.Spec.Downstream.Repository &&
+			pkgRev.Spec.PackageRevID.Realm == pkgVar.Spec.Downstream.Realm &&
+			pkgRev.Spec.PackageRevID.Package == pkgVar.Spec.Downstream.Package {
 
-			if pkgRev.Spec.PackageID.Workspace == pkgVar.GetWorkspaceName(hash) {
+			if pkgRev.Spec.PackageRevID.Workspace == pkgVar.GetWorkspaceName(hash) {
 				// if the pkgRev with the proper workspace name exists
 				exists = true
 			}
@@ -435,7 +435,7 @@ func isOwned(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, pkgVar *c
 
 func buildPackageRevision(ctx context.Context, pkgVar *configv1alpha1.PackageVariant, hash [sha1.Size]byte) *pkgv1alpha1.PackageRevision {
 	// this is the first package revision
-	pkgID := pkgid.PackageID{
+	pkgID := pkgrevid.PackageRevID{
 		Target:     pkgVar.Spec.Downstream.Target,
 		Repository: pkgVar.Spec.Downstream.Repository,
 		Realm:      pkgVar.Spec.Downstream.Realm,
@@ -451,7 +451,7 @@ func buildPackageRevision(ctx context.Context, pkgVar *configv1alpha1.PackageVar
 			Annotations:     pkgVar.Spec.PackageContext.Annotations,
 		},
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID:      pkgID,
+			PackageRevID:   pkgID,
 			Lifecycle:      pkgv1alpha1.PackageRevisionLifecycleDraft,
 			Upstream:       pkgVar.Spec.Upstream.DeepCopy(),
 			ReadinessGates: pkgVar.Spec.PackageContext.ReadinessGates,

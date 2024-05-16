@@ -36,9 +36,9 @@ func (r *gitRepository) DeletePackageRevision(ctx context.Context, pkgRev *pkgv1
 	if err := r.repo.FetchRemoteRepository(ctx); err != nil {
 		return err
 	}
-	if pkgRev.Spec.PackageID.Revision != "" {
+	if pkgRev.Spec.PackageRevID.Revision != "" {
 		// delete tag
-		pkgTagRefName := packageTagRefName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
+		pkgTagRefName := packageTagRefName(pkgRev.Spec.PackageRevID, pkgRev.Spec.PackageRevID.Revision)
 		if tagRef, err := r.repo.Repo.Reference(pkgTagRefName, true); err == nil {
 			if err := r.deleteRef(ctx, tagRef); err != nil {
 				if !strings.Contains(err.Error(), "reference not found") {
@@ -63,7 +63,7 @@ func (r *gitRepository) DeletePackageRevision(ctx context.Context, pkgRev *pkgv1
 		return nil
 	} else {
 		// TBD: do we need an option to retain the pkgWorkspace branch ?
-		wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
+		wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageRevID)
 		if wsPkgBranchRef, err := r.repo.Repo.Reference(wsPkgRefName, true); err != nil {
 			return err
 		} else {

@@ -151,10 +151,10 @@ func printPkgRevResourcesResource(c *PackageRevisionResources) metav1.TableRow {
 		Object: runtime.RawExtension{Object: c},
 	}
 	row.Cells = append(row.Cells, c.Name)
-	row.Cells = append(row.Cells, c.Spec.PackageID.Repository)
-	row.Cells = append(row.Cells, c.Spec.PackageID.Package)
-	row.Cells = append(row.Cells, c.Spec.PackageID.Revision)
-	row.Cells = append(row.Cells, c.Spec.PackageID.Workspace)
+	row.Cells = append(row.Cells, c.Spec.PackageRevID.Repository)
+	row.Cells = append(row.Cells, c.Spec.PackageRevID.Package)
+	row.Cells = append(row.Cells, c.Spec.PackageRevID.Revision)
+	row.Cells = append(row.Cells, c.Spec.PackageRevID.Workspace)
 	row.Cells = append(row.Cells, len(c.Spec.Resources))
 	return row
 }

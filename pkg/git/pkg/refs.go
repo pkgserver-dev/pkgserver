@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 )
 
 const (
@@ -108,23 +108,23 @@ func mainRefName(branch string) plumbing.ReferenceName {
 	return BranchName(branch).BranchInLocal()
 }
 
-func workspacePackageBranchRefName(pkgID pkgid.PackageID) plumbing.ReferenceName {
-	return packageBranchName(pkgID).BranchInLocal()
+func workspacePackageBranchRefName(pkgrevID pkgrevid.PackageRevID) plumbing.ReferenceName {
+	return packageBranchName(pkgrevID).BranchInLocal()
 }
 
-func packageBranchName(pkgID pkgid.PackageID) BranchName {
-	if pkgID.Target == pkgid.PkgTarget_Catalog {
-		return BranchName(fmt.Sprintf("%s/%s/%s", pkgID.Realm, pkgID.Package, pkgID.Workspace))
+func packageBranchName(pkgRevID pkgrevid.PackageRevID) BranchName {
+	if pkgRevID.Target == pkgrevid.PkgTarget_Catalog {
+		return BranchName(fmt.Sprintf("%s/%s/%s", pkgRevID.Realm, pkgRevID.Package, pkgRevID.Workspace))
 	}
-	return BranchName(fmt.Sprintf("%s/%s/%s/%s", pkgID.Target, pkgID.Realm, pkgID.Package, pkgID.Workspace))
+	return BranchName(fmt.Sprintf("%s/%s/%s/%s", pkgRevID.Target, pkgRevID.Realm, pkgRevID.Package, pkgRevID.Workspace))
 }
 
-func packageTagRefName(pkgID pkgid.PackageID, rev string) plumbing.ReferenceName {
+func packageTagRefName(pkgID pkgrevid.PackageRevID, rev string) plumbing.ReferenceName {
 	return packageTagName(pkgID, rev).TagInLocal()
 }
 
-func packageTagName(pkgID pkgid.PackageID, rev string) TagName {
-	if pkgID.Target == pkgid.PkgTarget_Catalog {
+func packageTagName(pkgID pkgrevid.PackageRevID, rev string) TagName {
+	if pkgID.Target == pkgrevid.PkgTarget_Catalog {
 		return TagName(fmt.Sprintf("%s/%s/%s", pkgID.Realm, pkgID.Package, rev))
 	}
 	return TagName(fmt.Sprintf("%s/%s/%s/%s", pkgID.Target, pkgID.Realm, pkgID.Package, rev))

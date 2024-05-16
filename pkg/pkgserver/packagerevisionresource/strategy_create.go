@@ -71,7 +71,7 @@ func (r *strategy) Create(ctx context.Context, key types.NamespacedName, obj run
 		pkgRev := pkgv1alpha1.BuildPackageRevision(
 			pkgRevResources.ObjectMeta,
 			pkgv1alpha1.PackageRevisionSpec{
-				PackageID: *pkgRevResources.Spec.PackageID.DeepCopy(),
+				PackageRevID: *pkgRevResources.Spec.PackageRevID.DeepCopy(),
 			},
 			pkgv1alpha1.PackageRevisionStatus{},
 		)

@@ -20,11 +20,11 @@ import (
 	"context"
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 )
 
 type ListOption struct {
-	PackageID *pkgid.PackageID
+	PackagerevID *pkgrevid.PackageRevID
 }
 
 type Repository interface {

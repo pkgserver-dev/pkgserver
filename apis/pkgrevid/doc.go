@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 // +kubebuilder:object:generate=true
-package pkgid
+package pkgrevid

@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/henderiw/logger/log"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,10 +36,10 @@ func (r *strategy) Get(ctx context.Context, key types.NamespacedName) (runtime.O
 	}
 
 	repo, err := r.getRepository(ctx, types.NamespacedName{
-		Name:      pkgid.GetRepoNameFromPkgRevName(key.Name),
+		Name:      pkgrevid.GetRepoNameFromPkgRevName(key.Name),
 		Namespace: key.Namespace})
 	if err != nil {
-		log.Error("pkgRevResources cannot get repository in apiserver", "repo", pkgid.GetRepoNameFromPkgRevName(key.Name), "error", err.Error())
+		log.Error("pkgRevResources cannot get repository in apiserver", "repo", pkgrevid.GetRepoNameFromPkgRevName(key.Name), "error", err.Error())
 		return nil, apierrors.NewInternalError(err)
 	}
 

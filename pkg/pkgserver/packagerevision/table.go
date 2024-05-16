@@ -18,6 +18,7 @@ package packagerevision
 
 import (
 	"github.com/henderiw/apiserver-store/pkg/generic/registry"
+	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,17 +35,19 @@ func NewTableConvertor(gr schema.GroupResource) registry.TableConvertor {
 			}
 			return []interface{}{
 				pkgRev.Name,
-				pkgRev.Spec.PackageID.Repository,
-				pkgRev.Spec.PackageID.Target,
-				pkgRev.Spec.PackageID.Realm,
-				pkgRev.Spec.PackageID.Package,
-				pkgRev.Spec.PackageID.Revision,
-				pkgRev.Spec.PackageID.Workspace,
+				pkgRev.GetCondition(condition.ConditionTypeReady).Status,
+				pkgRev.Spec.PackageRevID.Repository,
+				pkgRev.Spec.PackageRevID.Target,
+				pkgRev.Spec.PackageRevID.Realm,
+				pkgRev.Spec.PackageRevID.Package,
+				pkgRev.Spec.PackageRevID.Revision,
+				pkgRev.Spec.PackageRevID.Workspace,
 				string(pkgRev.Spec.Lifecycle),
 			}
 		},
 		Columns: []metav1.TableColumnDefinition{
 			{Name: "Name", Type: "string"},
+			{Name: "Ready", Type: "string"},
 			{Name: "Repository", Type: "string"},
 			{Name: "Target", Type: "string"},
 			{Name: "Realm", Type: "string"},

@@ -43,7 +43,7 @@ func (r *gitRepository) EnsurePackageRevision(ctx context.Context, pkgRev *pkgv1
 	if err := r.repo.FetchRemoteRepository(ctx); err != nil {
 		return err
 	}
-	if pkgRev.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished && pkgRev.Spec.PackageID.Revision != "" {
+	if pkgRev.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished && pkgRev.Spec.PackageRevID.Revision != "" {
 		return r.commitToMain(ctx, pkgRev)
 		//return r.pushTag(ctx, pkgRev)
 	}
@@ -116,7 +116,7 @@ func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageR
 	var parentCommit *object.Commit
 	var commitMsg string
 	var err error
-	if pkgRev.Spec.PackageID.Revision == "" {
+	if pkgRev.Spec.PackageRevID.Revision == "" {
 		parentCommit, commitMsg, err = r.getParentCommit(ctx, pkgRev)
 		if err != nil {
 			return plumbing.ZeroHash, err
@@ -156,8 +156,8 @@ func (r *gitRepository) commit(ctx context.Context, pkgRev *pkgv1alpha1.PackageR
 		return plumbing.ZeroHash, fmt.Errorf("failed to commit package: %w", err)
 	}
 
-	refName := workspacePackageBranchRefName(pkgRev.Spec.PackageID) // normally the workspace name
-	if pkgRev.Spec.PackageID.Revision != "" {
+	refName := workspacePackageBranchRefName(pkgRev.Spec.PackageRevID) // normally the workspace name
+	if pkgRev.Spec.PackageRevID.Revision != "" {
 		refName = mainRefName(string(r.branch)) // when the package revision is
 	}
 
@@ -194,7 +194,7 @@ func (r *gitRepository) getHeadCommit(_ context.Context, pkgRev *pkgv1alpha1.Pac
 		return nil, "", err
 	}
 
-	commitString := fmt.Sprintf("approved commit workspace %s", pkgRev.Spec.PackageID.Workspace)
+	commitString := fmt.Sprintf("approved commit workspace %s", pkgRev.Spec.PackageRevID.Workspace)
 
 	return parentCommit, commitString, nil
 }
@@ -203,11 +203,11 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 	log := log.FromContext(ctx)
 	var parentCommit *object.Commit
 	var commitString string
-	log.Info("getParentCommit", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageID)
+	log.Info("getParentCommit", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageRevID)
 
 	// if the workspace package reference exists we return this package reference
 	// if not we can get the parentCommit from either: latest pkgRev, main, a specific Version
-	wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
+	wsPkgRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageRevID)
 	if ref, err := r.repo.Repo.Reference(wsPkgRefName, false); err != nil {
 		// TBD: we did not implement the full strategy now; we just do latest or fallback
 		latestRev, err := r.getLatestRevision(ctx, pkgRev)
@@ -233,7 +233,7 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 				return nil, "", err
 			}
 		} else {
-			tagRefName := packageTagRefName(pkgRev.Spec.PackageID, latestRev)
+			tagRefName := packageTagRefName(pkgRev.Spec.PackageRevID, latestRev)
 			log.Info("getParentCommit use revision tag", "workspaceBranch", "does not exist", "revision", latestRev, "ref", tagRefName.String())
 			ref, err = r.repo.Repo.Reference(tagRefName, true)
 			if err != nil {
@@ -241,7 +241,7 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 				return nil, "", err
 			}
 			commitString = fmt.Sprintf("initial conmit from package revision: %s", latestRev)
-			_, parentCommit, err = r.getBranchAndCommitFromTag(ctx, pkgRev.Spec.PackageID.Package, ref)
+			_, parentCommit, err = r.getBranchAndCommitFromTag(ctx, pkgRev.Spec.PackageRevID.Package, ref)
 			if err != nil {
 				log.Error("get reference", "error", err)
 				return nil, "", err
@@ -270,7 +270,7 @@ func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.Pa
 	log := log.FromContext(ctx)
 	log.Info("commitToMain")
 	// check if the workspaceBranch still exists
-	branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageID)
+	branchRefName := workspacePackageBranchRefName(pkgRev.Spec.PackageRevID)
 	refName, err := r.repo.Repo.Reference(branchRefName, true)
 	if err != nil {
 		return err
@@ -288,7 +288,7 @@ func (r *gitRepository) commitToMain(ctx context.Context, pkgRev *pkgv1alpha1.Pa
 	if err != nil {
 		return err
 	}
-	pkgTagName := packageTagName(pkgRev.Spec.PackageID, pkgRev.Spec.PackageID.Revision)
+	pkgTagName := packageTagName(pkgRev.Spec.PackageRevID, pkgRev.Spec.PackageRevID.Revision)
 	log.Info("commitToMain", "pkgTagName", pkgTagName)
 	// Get the commit object from the reference.
 	commitObj, err := r.repo.Repo.CommitObject(commitHash)

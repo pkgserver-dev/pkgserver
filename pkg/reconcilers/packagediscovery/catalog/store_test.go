@@ -28,7 +28,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	kformtypes "github.com/kform-dev/kform/pkg/syntax/types"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -63,8 +63,8 @@ func getOutput(path string) ([]*yaml.RNode, error) {
 func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 
 	pkgName := "pkg1"
-	pkgID := pkgid.PackageID{
-		Target:     pkgid.PkgTarget_Catalog,
+	pkgID := pkgrevid.PackageRevID{
+		Target:     pkgrevid.PkgTarget_Catalog,
 		Repository: "repo",
 		Realm:      "realm",
 		Package:    pkgName,
@@ -112,7 +112,7 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 				fmt.Println(rn.MustString())
 			}
 
-			pkgID := pkgid.PackageID{
+			pkgID := pkgrevid.PackageRevID{
 				Repository: "dummy",
 				Realm:      pkgID.Realm,
 				Package:    pkgID.Package,
@@ -122,7 +122,7 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 			pkgRev := pkgv1alpha1.BuildPackageRevision(
 				metav1.ObjectMeta{Name: pkgRevName},
 				pkgv1alpha1.PackageRevisionSpec{
-					PackageID: pkgID,
+					PackageRevID: pkgID,
 				},
 				pkgv1alpha1.PackageRevisionStatus{},
 			)
@@ -164,7 +164,7 @@ func TestCatalogAPIStoreUpdateAPIsFromPkgRev(t *testing.T) {
 					Type:     APIType_Package,
 					Kind:     tc.expectedKind,
 					Resource: tc.expectedResource,
-					PkgID:    pkgID,
+					PkgRevID: pkgID,
 					Versions: map[string][]string{
 						tc.expectedVersion: {pkgRevName},
 					}}, *api); diff != "" {

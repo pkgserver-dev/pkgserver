@@ -19,14 +19,14 @@ package v1alpha1
 import (
 	"reflect"
 
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PackageDependencySpec defines the desired state of PackageDependency
 type PackageDependencySpec struct {
 	// Upstream defines the upstream PackageRevision reference
-	Upstream pkgid.Upstream `json:"upstream,omitempty" protobuf:"bytes,1,opt,name=upstream"`
+	Upstream pkgrevid.Upstream `json:"upstream,omitempty" protobuf:"bytes,1,opt,name=upstream"`
 }
 
 // PackageDependencyStatus defines the observed state of PackageDependency

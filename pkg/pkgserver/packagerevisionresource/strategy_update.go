@@ -65,38 +65,38 @@ func (r *strategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) 
 		return allErrs
 	}
 
-	if oldPkgRevResources.Spec.PackageID.Target != newPkgRevResources.Spec.PackageID.Target {
+	if oldPkgRevResources.Spec.PackageRevID.Target != newPkgRevResources.Spec.PackageRevID.Target {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec.packageID.target"),
-			newPkgRevResources.Spec.PackageID.Target,
-			"spec.packageID.target is immutable",
+			field.NewPath("spec.packageRevID.target"),
+			newPkgRevResources.Spec.PackageRevID.Target,
+			"spec.packageRevID.target is immutable",
 		))
 	}
-	if oldPkgRevResources.Spec.PackageID.Repository != newPkgRevResources.Spec.PackageID.Repository {
+	if oldPkgRevResources.Spec.PackageRevID.Repository != newPkgRevResources.Spec.PackageRevID.Repository {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec.packageID.repository"),
-			newPkgRevResources.Spec.PackageID.Repository,
-			"spec.packageID.repository is immutable",
+			field.NewPath("spec.packageRevID.repository"),
+			newPkgRevResources.Spec.PackageRevID.Repository,
+			"spec.packageRevID.repository is immutable",
 		))
 	}
-	if oldPkgRevResources.Spec.PackageID.Package != newPkgRevResources.Spec.PackageID.Package {
+	if oldPkgRevResources.Spec.PackageRevID.Package != newPkgRevResources.Spec.PackageRevID.Package {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec.packageID.realm"),
-			newPkgRevResources.Spec.PackageID.Realm,
-			"spec.packageID.realm is immutable",
+			field.NewPath("spec.packageRevID.realm"),
+			newPkgRevResources.Spec.PackageRevID.Realm,
+			"spec.packageRevID.realm is immutable",
 		))
 	}
-	if oldPkgRevResources.Spec.PackageID.Package != newPkgRevResources.Spec.PackageID.Package {
+	if oldPkgRevResources.Spec.PackageRevID.Package != newPkgRevResources.Spec.PackageRevID.Package {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec.packageID.package"),
-			newPkgRevResources.Spec.PackageID.Package,
-			"spec.packageID.package is immutable",
+			field.NewPath("spec.packageRevID.package"),
+			newPkgRevResources.Spec.PackageRevID.Package,
+			"spec.packageRevID.package is immutable",
 		))
 	}
-	if oldPkgRevResources.Spec.PackageID.Workspace != newPkgRevResources.Spec.PackageID.Workspace {
+	if oldPkgRevResources.Spec.PackageRevID.Workspace != newPkgRevResources.Spec.PackageRevID.Workspace {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec.workspace"),
-			newPkgRevResources.Spec.PackageID.Workspace,
+			newPkgRevResources.Spec.PackageRevID.Workspace,
 			"spec.workspace is immutable",
 		))
 	}
@@ -133,7 +133,7 @@ func (r *strategy) Update(ctx context.Context, key types.NamespacedName, obj, ol
 	pkgRev := pkgv1alpha1.BuildPackageRevision(
 		pkgRevResources.ObjectMeta,
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID: *pkgRevResources.Spec.PackageID.DeepCopy(),
+			PackageRevID: *pkgRevResources.Spec.PackageRevID.DeepCopy(),
 		},
 		pkgv1alpha1.PackageRevisionStatus{},
 	)
@@ -179,7 +179,7 @@ func (r *strategy) getRepo(ctx context.Context, cr *pkgv1alpha1.PackageRevisionR
 	log := log.FromContext(ctx)
 	repokey := types.NamespacedName{
 		Namespace: cr.Namespace,
-		Name:      cr.Spec.PackageID.Repository}
+		Name:      cr.Spec.PackageRevID.Repository}
 
 	repo := &configv1alpha1.Repository{}
 	if err := r.client.Get(ctx, repokey, repo); err != nil {

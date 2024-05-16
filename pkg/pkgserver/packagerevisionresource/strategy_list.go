@@ -27,7 +27,7 @@ import (
 	"github.com/henderiw/logger/log"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -90,22 +90,22 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 			if filter.Namespace != "" && filter.Namespace != pkgRev.Namespace {
 				continue
 			}
-			if filter.Target != "" && filter.Target != pkgRev.Spec.PackageID.Target {
+			if filter.Target != "" && filter.Target != pkgRev.Spec.PackageRevID.Target {
 				continue
 			}
-			if filter.Repository != "" && filter.Repository != pkgRev.Spec.PackageID.Repository {
+			if filter.Repository != "" && filter.Repository != pkgRev.Spec.PackageRevID.Repository {
 				continue
 			}
-			if filter.Realm != "" && filter.Realm != pkgRev.Spec.PackageID.Realm {
+			if filter.Realm != "" && filter.Realm != pkgRev.Spec.PackageRevID.Realm {
 				continue
 			}
-			if filter.Package != "" && filter.Package != pkgRev.Spec.PackageID.Package {
+			if filter.Package != "" && filter.Package != pkgRev.Spec.PackageRevID.Package {
 				continue
 			}
-			if filter.Revision != "" && filter.Revision != pkgRev.Spec.PackageID.Revision {
+			if filter.Revision != "" && filter.Revision != pkgRev.Spec.PackageRevID.Revision {
 				continue
 			}
-			if filter.Workspace != "" && filter.Workspace != pkgRev.Spec.PackageID.Workspace {
+			if filter.Workspace != "" && filter.Workspace != pkgRev.Spec.PackageRevID.Workspace {
 				continue
 			}
 			if filter.Lifecycle != "" && filter.Lifecycle != string(pkgRev.Spec.Lifecycle) {
@@ -115,7 +115,7 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 		wg.Add(1)
 		go func() error {
 			defer wg.Done()
-			repo, err := r.getRepository(ctx, types.NamespacedName{Name: pkgid.GetRepoNameFromPkgRevName(pkgRev.Name), Namespace: pkgRev.Namespace})
+			repo, err := r.getRepository(ctx, types.NamespacedName{Name: pkgrevid.GetRepoNameFromPkgRevName(pkgRev.Name), Namespace: pkgRev.Namespace})
 			if err != nil {
 				prrChan <- prr{
 					prr: nil,
@@ -156,11 +156,11 @@ func (r *strategy) List(ctx context.Context, options *metainternalversion.ListOp
 	for prr := range prrChan {
 		prr := prr
 		if prr.err != nil {
-			errm  = errors.Join(errm, err)
+			errm = errors.Join(errm, err)
 			continue
 		}
 		appendItem(v, prr.prr)
-		
+
 	}
 	if errm != nil {
 		return nil, apierrors.NewInternalError(errm)

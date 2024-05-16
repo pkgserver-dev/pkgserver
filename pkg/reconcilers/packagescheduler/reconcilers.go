@@ -28,16 +28,16 @@ import (
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/resource"
 	"github.com/kform-dev/kform/pkg/dag"
+	"github.com/pkg/errors"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/packagediscovery/catalog"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/packagescheduler/pkg"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -118,7 +118,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// if the pkgRev is a catalog packageRevision or
 	// if the pkgrev does not have a pkg Dependency readiness gate
 	// this event is not relevant
-	if strings.HasPrefix(cr.GetName(), pkgid.PkgTarget_Catalog) ||
+	if strings.HasPrefix(cr.GetName(), pkgrevid.PkgTarget_Catalog) ||
 		!cr.HasReadinessGate(controllerCondition) {
 		return ctrl.Result{}, nil
 	}
@@ -138,13 +138,13 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if err := r.installedPkgStore.UpdateWithFn(ctx, func(ctx context.Context, key storebackend.Key, pkg *pkg.Package) *pkg.Package {
 			// delete the pkgRev from the installed pkg
 			if key == getkeyFromPkgRev(cr) {
-				pkg.DeletePackageRevision(&cr.Spec.PackageID)
+				pkg.DeletePackageRevision(&cr.Spec.PackageRevID)
 			}
 			// delete the pkgRev as owner reference from all packages
-			pkg.DeleteOwnerRef(&cr.Spec.PackageID)
+			pkg.DeleteOwnerRef(&cr.Spec.PackageRevID)
 			return pkg
 		}); err != nil {
-			log.Error("cannot delete pkgrev as ownref", "pkgID", cr.Spec.PackageID.PkgRevString())
+			log.Error("cannot delete pkgrev as ownref", "pkgID", cr.Spec.PackageRevID.PkgRevString())
 		}
 
 		// remove the finalizer
@@ -169,8 +169,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if p == nil {
 			p = pkg.NewPackage()
 		}
-		log.Info("add pkgRev", "pkgID", cr.Spec.PackageID.String())
-		p.AddPackageRevision(&cr.Spec.PackageID)
+		log.Info("add pkgRev", "pkgID", cr.Spec.PackageRevID.String())
+		p.AddPackageRevision(&cr.Spec.PackageRevID)
 		return p
 	}); err != nil {
 		log.Error("cannot add pkgRev to installedPkgStore", "error", err.Error())
@@ -184,8 +184,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// reinitialize the dag
 	r.dag = dag.New[*configv1alpha1.PackageVariant]()
 	// add yourself to the dag
-	if err := r.dag.AddVertex(ctx, cr.Spec.PackageID.PkgString(), nil); err != nil {
-		log.Error("cannot add pkgRev to dag", "vertex", cr.Spec.PackageID.PkgString(), "error", err.Error())
+	if err := r.dag.AddVertex(ctx, cr.Spec.PackageRevID.PkgString(), nil); err != nil {
+		log.Error("cannot add pkgRev to dag", "vertex", cr.Spec.PackageRevID.PkgString(), "error", err.Error())
 		r.recorder.Eventf(cr, corev1.EventTypeNormal,
 			controllerEvent, "cannot add pkgRev %s to dag %s", cr.Name)
 
@@ -258,7 +258,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					cr.SetConditions(condition.ConditionUpdate(controllerCondition, "cannot get latest catalog package revision", upstream.String()))
 					return ctrl.Result{Requeue: true}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 				}
-				pvar.Spec.Upstream.Revision = latestCatalogPkgRev.Spec.PackageID.Revision
+				pvar.Spec.Upstream.Revision = latestCatalogPkgRev.Spec.packageRevID.Revision
 
 				if err := r.Apply(ctx, pvar); err != nil {
 					log.Error("cannot apply package variant", "pvar", pvar.Name, "error", err.Error())
@@ -276,7 +276,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				if p == nil {
 					p = pkg.NewPackage()
 				}
-				p.AddOwnerRef(&cr.Spec.PackageID)
+				p.AddOwnerRef(&cr.Spec.packageRevID)
 				return p
 			}); err != nil {
 				log.Error("cannot add pkgRev to installedPkgStore", "error", err.Error())
@@ -309,32 +309,32 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, errors.Wrap(r.Status().Update(ctx, cr), errUpdateStatus)
 }
 
-func (r *reconciler) getPkgState(ctx context.Context, downstream *pkgid.Downstream) (*pkgv1alpha1.PackageRevision, pkgid.PkgState, error) {
+func (r *reconciler) getPkgState(ctx context.Context, downstream *pkgrevid.Downstream) (*pkgv1alpha1.PackageRevision, pkgrevid.PkgState, error) {
 	// TODO why does these client options not work
 	opts := []client.ListOption{
 		/*
 			client.MatchingFields{
-				"spec.packageID.target":     downstream.Target,
-				"spec.packageID.repository": downstream.Repository,
-				"spec.packageID.realm":      downstream.Realm,
-				"spec.packageID.package":    downstream.Package,
+				"spec.packageRevID.target":     downstream.Target,
+				"spec.packageRevID.repository": downstream.Repository,
+				"spec.packageRevID.realm":      downstream.Realm,
+				"spec.packageRevID.package":    downstream.Package,
 			},
 		*/
 	}
 	pkgRevs := pkgv1alpha1.PackageRevisionList{}
 	if err := r.List(ctx, &pkgRevs, opts...); err != nil {
-		return nil, pkgid.PkgState_NotAvailable, err
+		return nil, pkgrevid.PkgState_NotAvailable, err
 	}
 	for _, pkgRev := range pkgRevs.Items {
 		// check if the the package we are intersted in is scheduled
-		if pkgRev.Spec.PackageID.Target == downstream.Target &&
-			pkgRev.Spec.PackageID.Repository == downstream.Repository &&
-			pkgRev.Spec.PackageID.Realm == downstream.Realm &&
-			pkgRev.Spec.PackageID.Package == downstream.Package {
+		if pkgRev.Spec.PackageRevID.Target == downstream.Target &&
+			pkgRev.Spec.PackageRevID.Repository == downstream.Repository &&
+			pkgRev.Spec.PackageRevID.Realm == downstream.Realm &&
+			pkgRev.Spec.PackageRevID.Package == downstream.Package {
 			if pkgRev.GetCondition(condition.ReadinessGate_PkgInstall).Status == metav1.ConditionTrue {
-				return &pkgRev, pkgid.PkgState_Installed, nil
+				return &pkgRev, pkgrevid.PkgState_Installed, nil
 			}
-			return &pkgRev, pkgid.PkgState_Scheduled, nil
+			return &pkgRev, pkgrevid.PkgState_Scheduled, nil
 		}
 	}
 	/*
@@ -342,19 +342,19 @@ func (r *reconciler) getPkgState(ctx context.Context, downstream *pkgid.Downstre
 			return false, nil
 		}
 	*/
-	return nil, pkgid.PkgState_NotAvailable, nil
+	return nil, pkgrevid.PkgState_NotAvailable, nil
 }
 
-func (r *reconciler) getLatestCatalogPackageRevision(ctx context.Context, upstream *pkgid.Upstream) (*pkgv1alpha1.PackageRevision, error) {
+func (r *reconciler) getLatestCatalogPackageRevision(ctx context.Context, upstream *pkgrevid.Upstream) (*pkgv1alpha1.PackageRevision, error) {
 	log := log.FromContext(ctx)
 
 	opts := []client.ListOption{
 		/*
 			client.MatchingFields{
 				"spec.lifecycle":            "published",
-				"spec.packageID.repository": upstream.Repository,
-				"spec.packageID.realm":      upstream.Realm,
-				"spec.packageID.package":    upstream.Package,
+				"spec.packageRevID.repository": upstream.Repository,
+				"spec.packageRevID.realm":      upstream.Realm,
+				"spec.packageRevID.package":    upstream.Package,
 			},
 		*/
 	}
@@ -366,19 +366,19 @@ func (r *reconciler) getLatestCatalogPackageRevision(ctx context.Context, upstre
 	pkgRevs := []pkgv1alpha1.PackageRevision{}
 	for _, pkgRev := range pkgRevList.Items {
 		if pkgRev.Spec.Lifecycle == pkgv1alpha1.PackageRevisionLifecyclePublished &&
-			pkgRev.Spec.PackageID.Repository == upstream.Repository &&
-			pkgRev.Spec.PackageID.Realm == upstream.Realm &&
-			pkgRev.Spec.PackageID.Package == upstream.Package {
+			pkgRev.Spec.PackageRevID.Repository == upstream.Repository &&
+			pkgRev.Spec.PackageRevID.Realm == upstream.Realm &&
+			pkgRev.Spec.PackageRevID.Package == upstream.Package {
 			pkgRevs = append(pkgRevs, pkgRev)
 		}
 	}
 
-	latestRev := pkgid.NoRevision
+	latestRev := pkgrevid.NoRevision
 	var latestPkgRev *pkgv1alpha1.PackageRevision
 	for _, pkgRev := range pkgRevs {
-		log.Debug("getLatestCatalogPackageRevision", "pkgID", pkgRev.Spec.PackageID, "latestRev", latestRev)
-		if pkgid.IsRevLater(pkgRev.Spec.PackageID.Revision, latestRev) {
-			latestRev = pkgRev.Spec.PackageID.Revision
+		log.Debug("getLatestCatalogPackageRevision", "pkgID", pkgRev.Spec.PackageRevID, "latestRev", latestRev)
+		if pkgrevid.IsRevLater(pkgRev.Spec.PackageRevID.Revision, latestRev) {
+			latestRev = pkgRev.Spec.PackageRevID.Revision
 			latestPkgRev = &pkgRev
 		}
 	}
@@ -404,7 +404,7 @@ func (r *reconciler) isPkgRevRecursivelyresolved(ctx context.Context, pkgRev *pk
 			return false, fmt.Errorf("cannot get installed packages for downstream: %s, error: %s", pkgVar.Spec.Downstream.String(), err.Error())
 		}
 		switch pkgState {
-		case pkgid.PkgState_NotAvailable:
+		case pkgrevid.PkgState_NotAvailable:
 			// continue recursively
 			// get latest revision from the catalog
 			latestCatalogPkgRev, err := r.getLatestCatalogPackageRevision(ctx, &upstream)
@@ -412,7 +412,7 @@ func (r *reconciler) isPkgRevRecursivelyresolved(ctx context.Context, pkgRev *pk
 				return false, fmt.Errorf("cannot get latest catalog package revision for upstream: %s, error: %s", upstream.String(), err.Error())
 			}
 			// update the upstream with the selected revision
-			pkgVar.Spec.Upstream.Revision = latestCatalogPkgRev.Spec.PackageID.Revision
+			pkgVar.Spec.Upstream.Revision = latestCatalogPkgRev.Spec.PackageRevID.Revision
 
 			// build a new pkgrev that is dependent on the original pkgRev
 			newDepPkgRev, err := buildPackageRevision(ctx, pkgVar)
@@ -421,11 +421,11 @@ func (r *reconciler) isPkgRevRecursivelyresolved(ctx context.Context, pkgRev *pk
 			}
 
 			// add new pkgrev to the dag with the pkgvar to be applied
-			log.Debug("pkg not available add vertex", "vertex", newDepPkgRev.Spec.PackageID.PkgString())
-			if err := r.addVertex(ctx, newDepPkgRev.Spec.PackageID.PkgString(), pkgVar); err != nil {
+			log.Debug("pkg not available add vertex", "vertex", newDepPkgRev.Spec.PackageRevID.PkgString())
+			if err := r.addVertex(ctx, newDepPkgRev.Spec.PackageRevID.PkgString(), pkgVar); err != nil {
 				return false, err
 			}
-			r.dag.Connect(ctx, pkgRev.Spec.PackageID.PkgString(), newDepPkgRev.Spec.PackageID.PkgString())
+			r.dag.Connect(ctx, pkgRev.Spec.PackageRevID.PkgString(), newDepPkgRev.Spec.PackageRevID.PkgString())
 
 			isResolved, err = r.isPkgRevRecursivelyresolved(ctx, newDepPkgRev)
 			if err != nil {
@@ -435,17 +435,17 @@ func (r *reconciler) isPkgRevRecursivelyresolved(ctx context.Context, pkgRev *pk
 				return isResolved, nil
 			}
 
-		case pkgid.PkgState_Scheduled:
+		case pkgrevid.PkgState_Scheduled:
 			// we have to wait -> add the pvar to the dag with a nil body
 			// add already scheduled pkgRev to the dag without the pkgVar
 			// as this indicated if the
-			log.Debug("pkg scheduled", "vertex", depPkgRev.Spec.PackageID.PkgString())
-			if err := r.addVertex(ctx, depPkgRev.Spec.PackageID.PkgString(), nil); err != nil {
+			log.Debug("pkg scheduled", "vertex", depPkgRev.Spec.PackageRevID.PkgString())
+			if err := r.addVertex(ctx, depPkgRev.Spec.PackageRevID.PkgString(), nil); err != nil {
 				return false, err
 			}
-			r.dag.Connect(ctx, pkgRev.Spec.PackageID.PkgString(), depPkgRev.Spec.PackageID.PkgString())
+			r.dag.Connect(ctx, pkgRev.Spec.PackageRevID.PkgString(), depPkgRev.Spec.PackageRevID.PkgString())
 
-		case pkgid.PkgState_Installed:
+		case pkgrevid.PkgState_Installed:
 			// we can proceed, dont add the pkgRev to the dag
 			// as such no down vertices will be visible
 		default:
@@ -455,20 +455,20 @@ func (r *reconciler) isPkgRevRecursivelyresolved(ctx context.Context, pkgRev *pk
 	return isResolved, nil
 }
 
-func buildPackageVariant(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, upstream *pkgid.Upstream) *configv1alpha1.PackageVariant {
+func buildPackageVariant(ctx context.Context, pkgRev *pkgv1alpha1.PackageRevision, upstream *pkgrevid.Upstream) *configv1alpha1.PackageVariant {
 	log := log.FromContext(ctx)
 	log.Debug("buildPackageVariant")
 	return configv1alpha1.BuildPackageVariant(
 		metav1.ObjectMeta{
 			Namespace: pkgRev.Namespace,
 			// DNS name can have - or .
-			Name: fmt.Sprintf("%s-pkginstall-%s", pkgRev.Spec.PackageID.Target, strings.ReplaceAll(upstream.PkgString(), "/", ".")),
+			Name: fmt.Sprintf("%s-pkginstall-%s", pkgRev.Spec.PackageRevID.Target, strings.ReplaceAll(upstream.PkgString(), "/", ".")),
 		},
 		configv1alpha1.PackageVariantSpec{
 			Upstream: *upstream,
-			Downstream: pkgid.Downstream{
-				Target:     pkgRev.Spec.PackageID.Target,
-				Repository: pkgRev.Spec.PackageID.Repository,
+			Downstream: pkgrevid.Downstream{
+				Target:     pkgRev.Spec.PackageRevID.Target,
+				Repository: pkgRev.Spec.PackageRevID.Repository,
 				Realm:      upstream.Realm,
 				Package:    upstream.Package,
 			},
@@ -496,7 +496,7 @@ func buildPackageRevision(ctx context.Context, pkgVar *configv1alpha1.PackageVar
 		return nil, err
 	}
 
-	pkgID := pkgid.PackageID{
+	pkgrevID := pkgrevid.PackageRevID{
 		Target:     pkgVar.Spec.Downstream.Target,
 		Repository: pkgVar.Spec.Downstream.Repository,
 		Realm:      pkgVar.Spec.Downstream.Realm,
@@ -507,12 +507,12 @@ func buildPackageRevision(ctx context.Context, pkgVar *configv1alpha1.PackageVar
 	return pkgv1alpha1.BuildPackageRevision(
 		metav1.ObjectMeta{
 			Namespace:   pkgVar.Namespace,
-			Name:        pkgID.PkgRevString(),
+			Name:        pkgrevID.PkgRevString(),
 			Labels:      pkgVar.Spec.PackageContext.Labels,
 			Annotations: pkgVar.Spec.PackageContext.Annotations,
 		},
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID:      pkgID,
+			PackageRevID:   pkgrevID,
 			Lifecycle:      pkgv1alpha1.PackageRevisionLifecycleDraft,
 			Upstream:       pkgVar.Spec.Upstream.DeepCopy(),
 			ReadinessGates: pkgVar.Spec.PackageContext.ReadinessGates,

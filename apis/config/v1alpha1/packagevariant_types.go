@@ -20,7 +20,7 @@ import (
 	"reflect"
 
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -42,9 +42,9 @@ const (
 // PackageVariantSpec defines the desired state of PackageVariant
 type PackageVariantSpec struct {
 	// Upstream defines the upstream PackageRevision reference
-	Upstream pkgid.Upstream `json:"upstream,omitempty" protobuf:"bytes,1,opt,name=upstream"`
+	Upstream pkgrevid.Upstream `json:"upstream,omitempty" protobuf:"bytes,1,opt,name=upstream"`
 	// Downstream defines the downstream Package information
-	Downstream pkgid.Downstream `json:"downstream,omitempty" protobuf:"bytes,2,opt,name=downstream"`
+	Downstream pkgrevid.Downstream `json:"downstream,omitempty" protobuf:"bytes,2,opt,name=downstream"`
 	// PackageContext defines the context of the PackageVariant
 	PackageContext PackageContext `json:"packageContext,omitempty" protobuf:"bytes,3,opt,name=packageContext"`
 	// +kubebuilder:validation:Enum=adoptExisting;adoptNone;

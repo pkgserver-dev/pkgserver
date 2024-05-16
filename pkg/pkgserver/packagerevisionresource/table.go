@@ -18,6 +18,7 @@ package packagerevisionresource
 
 import (
 	"github.com/henderiw/apiserver-store/pkg/generic/registry"
+	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,17 +35,19 @@ func NewTableConvertor(gr schema.GroupResource) registry.TableConvertor {
 			}
 			return []interface{}{
 				prr.Name,
-				prr.Spec.PackageID.Repository,
-				prr.Spec.PackageID.Target,
-				prr.Spec.PackageID.Realm,
-				prr.Spec.PackageID.Package,
-				prr.Spec.PackageID.Revision,
-				prr.Spec.PackageID.Workspace,
+				prr.GetCondition(condition.ConditionTypeReady).Status,
+				prr.Spec.PackageRevID.Repository,
+				prr.Spec.PackageRevID.Target,
+				prr.Spec.PackageRevID.Realm,
+				prr.Spec.PackageRevID.Package,
+				prr.Spec.PackageRevID.Revision,
+				prr.Spec.PackageRevID.Workspace,
 				len(prr.Spec.Resources),
 			}
 		},
 		Columns: []metav1.TableColumnDefinition{
 			{Name: "Name", Type: "string"},
+			{Name: "Ready", Type: "string"},
 			{Name: "Repository", Type: "string"},
 			{Name: "Realm", Type: "string"},
 			{Name: "Package", Type: "string"},

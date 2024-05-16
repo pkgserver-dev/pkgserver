@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pkgid
+package pkgrevid
 
 import (
 	"testing"
@@ -26,13 +26,13 @@ func TestParseTag(t *testing.T) {
 	cases := map[string]struct {
 		tag           string
 		catalog       bool
-		expectedPkgID *PackageID
+		expectedPkgID *PackageRevID
 		expectedError bool
 	}{
 		"Catalog-Normal-Realm": {
 			tag:     "a/b/c/v3",
 			catalog: true,
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:   PkgTarget_Catalog,
 				Realm:    "a/b",
 				Package:  "c",
@@ -43,7 +43,7 @@ func TestParseTag(t *testing.T) {
 		"Catalog-Normal-NoRealm": {
 			tag:     "c/v3",
 			catalog: true,
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:   PkgTarget_Catalog,
 				Realm:    "",
 				Package:  "c",
@@ -58,7 +58,7 @@ func TestParseTag(t *testing.T) {
 		},
 		"Target-Normal-Realm": {
 			tag: "a/b/c/d/v3",
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:   "a",
 				Realm:    "b/c",
 				Package:  "d",
@@ -68,7 +68,7 @@ func TestParseTag(t *testing.T) {
 		},
 		"Target-Normal-NoRealm": {
 			tag: "a/d/v3",
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:   "a",
 				Realm:    "",
 				Package:  "d",
@@ -108,13 +108,13 @@ func TestParseBranch(t *testing.T) {
 	cases := map[string]struct {
 		tag           string
 		catalog       bool
-		expectedPkgID *PackageID
+		expectedPkgID *PackageRevID
 		expectedError bool
 	}{
 		"Catalog-Normal-Realm": {
 			tag:     "a/b/c/ws3",
 			catalog: true,
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:    PkgTarget_Catalog,
 				Realm:     "a/b",
 				Package:   "c",
@@ -125,7 +125,7 @@ func TestParseBranch(t *testing.T) {
 		"Catalog-Normal-NoRealm": {
 			tag:     "c/ws3",
 			catalog: true,
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:    PkgTarget_Catalog,
 				Realm:     "",
 				Package:   "c",
@@ -140,7 +140,7 @@ func TestParseBranch(t *testing.T) {
 		},
 		"Target-Normal-Realm": {
 			tag: "a/b/c/d/ws3",
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:    "a",
 				Realm:     "b/c",
 				Package:   "d",
@@ -150,7 +150,7 @@ func TestParseBranch(t *testing.T) {
 		},
 		"Target-Normal-NoRealm": {
 			tag: "a/d/ws3",
-			expectedPkgID: &PackageID{
+			expectedPkgID: &PackageRevID{
 				Target:    "a",
 				Realm:     "",
 				Package:   "d",

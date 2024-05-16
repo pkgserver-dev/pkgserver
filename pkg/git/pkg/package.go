@@ -27,7 +27,7 @@ import (
 	"github.com/henderiw/logger/log"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -142,10 +142,10 @@ func (r *packageListEntry) buildPackageRevision(ctx context.Context, deployment 
 	repo := r.parent.parent
 
 	annotations := map[string]string{}
-	var pkgID pkgid.PackageID
+	var pkgID pkgrevid.PackageRevID
 	if !deployment {
-		pkgID = pkgid.PackageID{
-			Target:     pkgid.PkgTarget_Catalog,
+		pkgID = pkgrevid.PackageRevID{
+			Target:     pkgrevid.PkgTarget_Catalog,
 			Repository: repo.cr.Name,
 			Realm:      filepath.Dir(r.path),
 			Package:    filepath.Base(r.path),
@@ -158,7 +158,7 @@ func (r *packageListEntry) buildPackageRevision(ctx context.Context, deployment 
 		if len(parts) < 2 {
 			return nil
 		}
-		pkgID = pkgid.PackageID{
+		pkgID = pkgrevid.PackageRevID{
 			Target:     parts[0],
 			Repository: repo.cr.Name,
 			Realm:      filepath.Join(parts[1 : len(parts)-2]...),
@@ -179,8 +179,8 @@ func (r *packageListEntry) buildPackageRevision(ctx context.Context, deployment 
 			Annotations: annotations,
 		},
 		Spec: pkgv1alpha1.PackageRevisionSpec{
-			PackageID: pkgID,
-			Lifecycle: pkgv1alpha1.PackageRevisionLifecyclePublished,
+			PackageRevID: pkgID,
+			Lifecycle:    pkgv1alpha1.PackageRevisionLifecyclePublished,
 		},
 		Status: pkgv1alpha1.PackageRevisionStatus{
 			PublishedBy: commit.Author.Name,

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pkgid
+package pkgrevid
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ const (
 )
 
 // +k8s:openapi-gen=true
-type PackageID struct {
+type PackageRevID struct {
 	// Target defines the target for the package; not relevant for catalog packages
 	// e.g. a cluster
 	Target string `json:"target,omitempty" protobuf:"bytes,1,opt,name=target"`
@@ -43,12 +43,12 @@ type PackageID struct {
 	Workspace string `json:"workspace,omitempty" protobuf:"bytes,6,opt,name=workspace"`
 }
 
-func ParsePkgRev2PkgID(pkgstr string) (*PackageID, error) {
+func ParsePkgRev2PkgRevID(pkgstr string) (*PackageRevID, error) {
 	parts := strings.Split(pkgstr, ".")
 	if len(parts) != 5 {
-		return &PackageID{}, fmt.Errorf("pkgString should contain 5 parameters <TARGET>.<REPO>.<REALM>.<PKG>.<WORKSPACE>, got: %s", pkgstr)
+		return &PackageRevID{}, fmt.Errorf("pkgString should contain 5 parameters <TARGET>.<REPO>.<REALM>.<PKG>.<WORKSPACE>, got: %s", pkgstr)
 	}
-	return &PackageID{
+	return &PackageRevID{
 		Target:     parts[0],
 		Repository: parts[1],
 		Realm:      strings.ReplaceAll(parts[2], ":", "/"),
@@ -57,13 +57,13 @@ func ParsePkgRev2PkgID(pkgstr string) (*PackageID, error) {
 	}, nil
 }
 
-func ParseTag(tagstr string, catalog bool) (*PackageID, error) {
+func ParseTag(tagstr string, catalog bool) (*PackageRevID, error) {
 	parts := strings.Split(tagstr, "/")
 	if catalog {
 		if len(parts) < 2 {
-			return &PackageID{}, fmt.Errorf("pkgString should contain 2 parameters [<REALM>]/<PKG>/<REVISION>, got: %s", tagstr)
+			return &PackageRevID{}, fmt.Errorf("pkgString should contain 2 parameters [<REALM>]/<PKG>/<REVISION>, got: %s", tagstr)
 		}
-		return &PackageID{
+		return &PackageRevID{
 			Target:   PkgTarget_Catalog,
 			Realm:    path.Join(parts[0 : len(parts)-2]...),
 			Package:  parts[len(parts)-2],
@@ -71,9 +71,9 @@ func ParseTag(tagstr string, catalog bool) (*PackageID, error) {
 		}, nil
 	} else {
 		if len(parts) < 3 {
-			return &PackageID{}, fmt.Errorf("pkgString should contain 3 parameters <TARGET>/[<REALM>]/<PKG>/<REVISION>, got: %s", tagstr)
+			return &PackageRevID{}, fmt.Errorf("pkgString should contain 3 parameters <TARGET>/[<REALM>]/<PKG>/<REVISION>, got: %s", tagstr)
 		}
-		return &PackageID{
+		return &PackageRevID{
 			Target:   parts[0],
 			Realm:    path.Join(parts[1 : len(parts)-2]...),
 			Package:  parts[len(parts)-2],
@@ -82,13 +82,13 @@ func ParseTag(tagstr string, catalog bool) (*PackageID, error) {
 	}
 }
 
-func ParseBranch(tagstr string, catalog bool) (*PackageID, error) {
+func ParseBranch(tagstr string, catalog bool) (*PackageRevID, error) {
 	parts := strings.Split(tagstr, "/")
 	if catalog {
 		if len(parts) < 2 {
-			return &PackageID{}, fmt.Errorf("pkgString should contain 2 parameters [<REALM>]/<PKG>/<WORKSPACE>, got: %s", tagstr)
+			return &PackageRevID{}, fmt.Errorf("pkgString should contain 2 parameters [<REALM>]/<PKG>/<WORKSPACE>, got: %s", tagstr)
 		}
-		return &PackageID{
+		return &PackageRevID{
 			Target:    PkgTarget_Catalog,
 			Realm:     path.Join(parts[0 : len(parts)-2]...),
 			Package:   parts[len(parts)-2],
@@ -96,9 +96,9 @@ func ParseBranch(tagstr string, catalog bool) (*PackageID, error) {
 		}, nil
 	} else {
 		if len(parts) < 3 {
-			return &PackageID{}, fmt.Errorf("pkgString should contain 3 parameters <TARGET>/[<REALM>]/<PKG>/<WORKSPACE>, got: %s", tagstr)
+			return &PackageRevID{}, fmt.Errorf("pkgString should contain 3 parameters <TARGET>/[<REALM>]/<PKG>/<WORKSPACE>, got: %s", tagstr)
 		}
-		return &PackageID{
+		return &PackageRevID{
 			Target:    parts[0],
 			Realm:     path.Join(parts[1 : len(parts)-2]...),
 			Package:   parts[len(parts)-2],
@@ -107,18 +107,18 @@ func ParseBranch(tagstr string, catalog bool) (*PackageID, error) {
 	}
 }
 
-func (r *PackageID) PkgRevString() string {
+func (r *PackageRevID) PkgRevString() string {
 	return fmt.Sprintf("%s.%s.%s.%s.%s", r.Target, r.Repository, RealmToName(r.Realm), r.Package, r.Workspace)
 }
 
-func (r *PackageID) Path() string {
+func (r *PackageRevID) Path() string {
 	if r.Target == "catalog" {
 		return path.Join(r.Realm, r.Package)
 	}
 	return path.Join(r.Target, r.Realm, r.Package)
 }
 
-func (r *PackageID) PkgString() string {
+func (r *PackageRevID) PkgString() string {
 	return path.Join(r.Realm, r.Package)
 }
 
@@ -134,29 +134,29 @@ func PackageToDir(pkg string) string {
 	return strings.ReplaceAll(pkg, ":", "/")
 }
 
-func (r *PackageID) Branch(catalog bool) string {
+func (r *PackageRevID) Branch(catalog bool) string {
 	if catalog {
 		return path.Join(r.Realm, r.Package, r.Workspace)
 	}
 	return path.Join(r.Target, r.Realm, r.Package, r.Workspace)
 }
 
-func (r *PackageID) Tag(catalog bool) string {
+func (r *PackageRevID) Tag(catalog bool) string {
 	if catalog {
 		return path.Join(r.Realm, r.Package, r.Revision)
 	}
 	return path.Join(r.Target, r.Realm, r.Package, r.Revision)
 }
 
-func (r *PackageID) GitRevision() string {
+func (r *PackageRevID) GitRevision() string {
 	return path.Join(r.Target, r.Realm, r.Package, r.Revision)
 }
 
-func (r *PackageID) OutDir() string {
+func (r *PackageRevID) OutDir() string {
 	return path.Join(r.Target, r.Realm, r.Package, "out")
 }
 
-func (r *PackageID) DNSName() string {
+func (r *PackageRevID) DNSName() string {
 	// had to trim this to please  config-management
 	//return fmt.Sprintf("%s.%s.%s", r.Target, strings.ReplaceAll(r.Realm, "/", "."), r.Package)
 	return fmt.Sprintf("%s.%s", r.Target, r.Package)

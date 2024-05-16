@@ -24,7 +24,7 @@ import (
 	"github.com/henderiw/resource"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
@@ -102,7 +102,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// if the pkgRev is a catalog packageRevision or
 	// if the pkgrev does not have a condition to process the pkgRev
 	// this event is not relevant
-	if strings.HasPrefix(cr.GetName(), pkgid.PkgTarget_Catalog) ||
+	if strings.HasPrefix(cr.GetName(), pkgrevid.PkgTarget_Catalog) ||
 		!cr.HasReadinessGate(controllerCondition) {
 		return ctrl.Result{}, nil
 	}

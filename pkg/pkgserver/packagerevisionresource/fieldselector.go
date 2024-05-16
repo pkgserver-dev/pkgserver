@@ -86,17 +86,17 @@ func parsePackageFieldSelector(ctx context.Context, fieldSelector fields.Selecto
 			filter.Name = requirement.Value
 		case "metadata.namespace":
 			filter.Namespace = requirement.Value
-		case "spec.packageID.target":
+		case "spec.packageRevID.target":
 			filter.Target = requirement.Value
-		case "spec.packageID.repository":
+		case "spec.packageRevID.repository":
 			filter.Repository = requirement.Value
-		case "spec.packageID.realm":
+		case "spec.packageRevID.realm":
 			filter.Realm = requirement.Value
-		case "spec.packageID.package":
+		case "spec.packageRevID.package":
 			filter.Package = requirement.Value
-		case "spec.packageID.revision":
+		case "spec.packageRevID.revision":
 			filter.Revision = requirement.Value
-		case "spec.packageID.workspace":
+		case "spec.packageRevID.workspace":
 			filter.Workspace = requirement.Value
 		case "spec.lifecycle":
 			filter.Lifecycle = requirement.Value

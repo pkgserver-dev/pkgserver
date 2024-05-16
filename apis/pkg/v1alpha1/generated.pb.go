@@ -25,7 +25,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
 	condition "github.com/pkgserver-dev/pkgserver/apis/condition"
-	pkgid "github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	pkgrevid "github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	v11 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
@@ -935,7 +935,7 @@ func (m *PackageRevisionResourcesSpec) MarshalToSizedBuffer(dAtA []byte) (int, e
 	var l int
 	_ = l
 	{
-		size, err := m.PackageID.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.PackageRevID.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1089,7 +1089,7 @@ func (m *PackageRevisionSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x12
 	{
-		size, err := m.PackageID.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.PackageRevID.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1360,7 +1360,7 @@ func (m *PackageRevisionResourcesSpec) Size() (n int) {
 			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
 		}
 	}
-	l = m.PackageID.Size()
+	l = m.PackageRevID.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -1382,7 +1382,7 @@ func (m *PackageRevisionSpec) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.PackageID.Size()
+	l = m.PackageRevID.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Lifecycle)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -1592,7 +1592,7 @@ func (this *PackageRevisionResourcesSpec) String() string {
 	mapStringForResources += "}"
 	s := strings.Join([]string{`&PackageRevisionResourcesSpec{`,
 		`Resources:` + mapStringForResources + `,`,
-		`PackageID:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.PackageID), "PackageID", "pkgid.PackageID", 1), `&`, ``, 1) + `,`,
+		`PackageID:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.PackageRevID), "PackageID", "pkgid.PackageID", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1627,7 +1627,7 @@ func (this *PackageRevisionSpec) String() string {
 	}
 	repeatedStringForInputs += "}"
 	s := strings.Join([]string{`&PackageRevisionSpec{`,
-		`PackageID:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.PackageID), "PackageID", "pkgid.PackageID", 1), `&`, ``, 1) + `,`,
+		`PackageID:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.PackageRevID), "PackageID", "pkgid.PackageID", 1), `&`, ``, 1) + `,`,
 		`Lifecycle:` + fmt.Sprintf("%v", this.Lifecycle) + `,`,
 		`UpdatePolicy:` + fmt.Sprintf("%v", this.UpdatePolicy) + `,`,
 		`Tasks:` + repeatedStringForTasks + `,`,
@@ -2179,7 +2179,7 @@ func (m *PackageRevisionDependency) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PackageDependencies = append(m.PackageDependencies, &pkgid.Upstream{})
+			m.PackageDependencies = append(m.PackageDependencies, &pkgrevid.Upstream{})
 			if err := m.PackageDependencies[len(m.PackageDependencies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -2925,7 +2925,7 @@ func (m *PackageRevisionResourcesSpec) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.PackageID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PackageRevID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3091,7 +3091,7 @@ func (m *PackageRevisionSpec) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.PackageID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PackageRevID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3257,7 +3257,7 @@ func (m *PackageRevisionSpec) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Upstream == nil {
-				m.Upstream = &pkgid.Upstream{}
+				m.Upstream = &pkgrevid.Upstream{}
 			}
 			if err := m.Upstream.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -33,7 +33,7 @@ import (
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	"github.com/pkgserver-dev/pkgserver/apis/generated/clientset/versioned"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
@@ -118,7 +118,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// if the pkgRev is a catalog packageRevision or
 	// if the pkgrev does not have a condition to process the pkgRev
 	// this event is not relevant
-	if strings.HasPrefix(cr.GetName(), pkgid.PkgTarget_Catalog) ||
+	if strings.HasPrefix(cr.GetName(), pkgrevid.PkgTarget_Catalog) ||
 		!cr.HasReadinessGate(controllerCondition) {
 		return ctrl.Result{}, nil
 	}
@@ -145,7 +145,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if !cr.GetDeletionTimestamp().IsZero() {
 		log.Info("deleting...")
-		if cr.Spec.PackageID.Revision != "" && cr.Spec.Lifecycle != pkgv1alpha1.PackageRevisionLifecycleDeletionProposed {
+		if cr.Spec.PackageRevID.Revision != "" && cr.Spec.Lifecycle != pkgv1alpha1.PackageRevisionLifecycleDeletionProposed {
 			log.Info("cannot delete the kform resources since the package was released and the paackage is not in deletionProposed state")
 			return ctrl.Result{}, nil
 		}
@@ -312,7 +312,7 @@ func (r *reconciler) runkform(
 	outputData := memory.NewStore[[]byte]()
 	kformRunnerConfig := &runner.Config{
 		Factory:        util.NewFactory(util.NewMatchVersionFlags(matchVersionKubeConfigFlags)),
-		PackageName:    cr.Spec.PackageID.Package,
+		PackageName:    cr.Spec.PackageRevID.Package,
 		LocalInventory: localInventory,
 		InputData:      inputData,
 		ResourceData:   resourceData,
@@ -350,8 +350,8 @@ func (r *reconciler) updatePackageRevisionResources(
 	newPkgrevResources := pkgv1alpha1.BuildPackageRevisionResources(
 		*cr.ObjectMeta.DeepCopy(),
 		pkgv1alpha1.PackageRevisionResourcesSpec{
-			PackageID: *cr.Spec.PackageID.DeepCopy(),
-			Resources: resources,
+			PackageRevID: *cr.Spec.PackageRevID.DeepCopy(),
+			Resources:    resources,
 		},
 		pkgv1alpha1.PackageRevisionResourcesStatus{},
 	)

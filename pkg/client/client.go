@@ -107,7 +107,7 @@ func createRESTMapper() meta.RESTMapper {
 	}{
 		//{kind: configv1alpha1.SchemeGroupVersion.WithKind("Repository"), plural: "repositories", singular: "repository"},
 		{kind: pkgv1alpha1.SchemeGroupVersion.WithKind("PackageRevision"), plural: "packagerevisions", singular: "packagerevision"},
-		{kind: pkgv1alpha1.SchemeGroupVersion.WithKind("PackageRevisionResources"), plural: "packagerevisionresources", singular: "packagerevisionresources"},
+		{kind: pkgv1alpha1.SchemeGroupVersion.WithKind("PackageRevisionResources"), plural: "packagerevisionresourceses", singular: "packagerevisionresources"},
 		{kind: corev1.SchemeGroupVersion.WithKind("Secret"), plural: "secrets", singular: "secret"},
 		{kind: metav1.SchemeGroupVersion.WithKind("Table"), plural: "tables", singular: "table"},
 	} {

@@ -38,12 +38,12 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags) *Runner {
+func NewRunner(ctx context.Context, version string, kubeflags *genericclioptions.ConfigFlags) *Runner {
 	r := &Runner{
 		printFlags: get.NewGetPrintFlags(),
 	}
 	cmd := &cobra.Command{
-		Use:     "get [flags]",
+		Use:     "get [PKGREVs...] [flags]",
 		Aliases: []string{"list"},
 		//Args: cobra.ExactArgs(1),
 		//Short:   docs.InitShort,
@@ -54,7 +54,7 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 	}
 
 	r.Command = cmd
-	r.cfg = cfg
+	r.kubeflags = kubeflags
 
 	cmd.Flags().StringVar(&r.target, "target", "", "Target of the packages to get, Any package whose target matches this value will be included in the result")
 	cmd.Flags().StringVar(&r.realm, "realm", "", "Realm of the packages to get, Any package whose realm matches this value will be included in the result")
@@ -71,8 +71,8 @@ func NewCommand(ctx context.Context, version string, kubeflags *genericclioption
 }
 
 type Runner struct {
-	Command *cobra.Command
-	cfg     *genericclioptions.ConfigFlags
+	Command   *cobra.Command
+	kubeflags *genericclioptions.ConfigFlags
 	//client  client.Client
 	local bool
 
@@ -105,13 +105,11 @@ func (r *Runner) runE(cmd *cobra.Command, args []string) error {
 	var objs []runtime.Object
 
 	namespace := "default"
-	if r.cfg.Namespace != nil && *r.cfg.Namespace != "" {
-		namespace = *r.cfg.Namespace
+	if r.kubeflags.Namespace != nil && *r.kubeflags.Namespace != "" {
+		namespace = *r.kubeflags.Namespace
 	}
 
-	fmt.Println("reguestTable", r.requestTable)
-
-	b := resource.NewBuilder(r.cfg).NamespaceParam(namespace)
+	b := resource.NewBuilder(r.kubeflags).NamespaceParam(namespace)
 	if r.requestTable {
 		scheme := runtime.NewScheme()
 		// Accept PartialObjectMetadata and Table
@@ -135,19 +133,19 @@ func (r *Runner) runE(cmd *cobra.Command, args []string) error {
 	if useSelectors {
 		fieldSelector := fields.Everything()
 		if r.target != "" {
-			fieldSelector = fields.OneTermEqualSelector("spec.packageID.target", r.target)
+			fieldSelector = fields.OneTermEqualSelector("spec.packageRevID.target", r.target)
 		}
 		if r.realm != "" {
-			fieldSelector = fields.OneTermEqualSelector("spec.packageID.realm", r.realm)
+			fieldSelector = fields.OneTermEqualSelector("spec.packageRevID.realm", r.realm)
 		}
 		if r.revision != "" {
-			fieldSelector = fields.OneTermEqualSelector("spec.packageID.revision", r.revision)
+			fieldSelector = fields.OneTermEqualSelector("spec.packageRevID.revision", r.revision)
 		}
 		if r.workspace != "" {
-			fieldSelector = fields.OneTermEqualSelector("spec.packageID.workspaceName", r.workspace)
+			fieldSelector = fields.OneTermEqualSelector("spec.packageRevID.workspaceName", r.workspace)
 		}
 		if r.packageName != "" {
-			fieldSelector = fields.OneTermEqualSelector("spec.packageID.packageName", r.packageName)
+			fieldSelector = fields.OneTermEqualSelector("spec.packageRevID.packageName", r.packageName)
 		}
 		if s := fieldSelector.String(); s != "" {
 			b = b.FieldSelectorParam(s)

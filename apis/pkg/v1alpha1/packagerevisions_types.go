@@ -20,7 +20,7 @@ import (
 	"reflect"
 
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -58,7 +58,7 @@ const (
 
 // PackageRevisionSpec defines the desired state of PackageRevision
 type PackageRevisionSpec struct {
-	PackageID pkgid.PackageID `json:"packageID" protobuf:"bytes,1,opt,name=packageID"`
+	PackageRevID pkgrevid.PackageRevID `json:"packageRevID" protobuf:"bytes,1,opt,name=packageRevID"`
 	// Lifecycle defines the lifecycle of the resource
 	Lifecycle PackageRevisionLifecycle `json:"lifecycle,omitempty" protobuf:"bytes,2,opt,name=lifecycle"`
 	// UpdatePolicy is the policy used to update resources
@@ -71,7 +71,7 @@ type PackageRevisionSpec struct {
 	// ready for approval
 	ReadinessGates []condition.ReadinessGate `json:"readinessGates,omitempty" protobuf:"bytes,5,rep,name=readinessGates"`
 	// Upstream identifies the upstream package this package is originated from
-	Upstream *pkgid.Upstream `json:"upstream,omitempty" protobuf:"bytes,6,opt,name=upstream"`
+	Upstream *pkgrevid.Upstream `json:"upstream,omitempty" protobuf:"bytes,6,opt,name=upstream"`
 	// Inputs define the inputs defined for the PackageContext
 	//+kubebuilder:pruning:PreserveUnknownFields
 	Inputs []runtime.RawExtension `json:"inputs,omitempty" protobuf:"bytes,7,rep,name=inputs"`
@@ -128,7 +128,7 @@ type PackageRevisionDependency struct {
 	// Reference the dependency is sourced from (apiversion, kind, namespace, name)
 	Ref *corev1.ObjectReference `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
 	// PackageDependencies define the package dependencies the reference depend upon (repository, realm, package, (revision)
-	PackageDependencies []*pkgid.Upstream `json:"packageDependencies,omitempty" protobuf:"bytes,3,rep,name=packageDependencies"`
+	PackageDependencies []*pkgrevid.Upstream `json:"packageDependencies,omitempty" protobuf:"bytes,3,rep,name=packageDependencies"`
 	// RuntimeDependencies define the runtime dependencies the reference depend upon (apiversion, kind, namespace, name)
 	RuntimeDependencies []*corev1.ObjectReference `json:"runtimeDependencies,omitempty" protobuf:"bytes,4,rep,name=runtimeDependencies"`
 }

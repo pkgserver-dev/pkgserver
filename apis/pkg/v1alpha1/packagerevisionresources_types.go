@@ -20,13 +20,13 @@ import (
 	"reflect"
 
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PackageRevisionResourcesSpec defines the desired state of PackageRevisionResources
 type PackageRevisionResourcesSpec struct {
-	PackageID pkgid.PackageID `json:"packageID" protobuf:"bytes,6,opt,name=packageID"`
+	PackageRevID pkgrevid.PackageRevID `json:"packageRevID" protobuf:"bytes,6,opt,name=packageRevID"`
 	// Resources define the content of the resources key is the name of the KRM file,
 	// value defines the the content of the KRM reource
 	Resources map[string]string `json:"resources,omitempty" protobuf:"bytes,1,opt,name=resources"`

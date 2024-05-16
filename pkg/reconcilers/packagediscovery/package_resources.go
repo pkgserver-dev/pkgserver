@@ -101,7 +101,7 @@ func (r *reconciler) getPackageResources(ctx context.Context, cr *pkgv1alpha1.Pa
 
 	pkgRecorder := recorder.New[diag.Diagnostic]()
 	ctx = context.WithValue(ctx, kformtypes.CtxKeyRecorder, pkgRecorder)
-	p, err := pkgparser.New(ctx, filepath.Base(cr.Spec.PackageID.Package))
+	p, err := pkgparser.New(ctx, filepath.Base(cr.Spec.PackageRevID.Package))
 	if err != nil {
 		log.Error("cannot get package parser", "error", err.Error())
 		return packages, resources, inputs, outputs, err

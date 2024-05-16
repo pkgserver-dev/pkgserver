@@ -24,15 +24,15 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/resource"
+	"github.com/pkg/errors"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/ctrlconfig"
 	"github.com/pkgserver-dev/pkgserver/pkg/reconcilers/lease"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -104,11 +104,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Name:      cr.GetName(),
 	}
 	cr = cr.DeepCopy()
-	log = log.With("pkgID", cr.Spec.PackageID)
+	log = log.With("pkgID", cr.Spec.PackageRevID)
 	// if the pkgRev is a catalog packageRevision or
 	// if the pkgrev does not have a condition to process the pkgRev
 	// this event is not relevant
-	if strings.HasPrefix(cr.GetName(), pkgid.PkgTarget_Catalog) ||
+	if strings.HasPrefix(cr.GetName(), pkgrevid.PkgTarget_Catalog) ||
 		!cr.HasReadinessGate(controllerCondition) {
 		return ctrl.Result{}, nil
 	}
@@ -120,7 +120,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.GetPreviousCondition(controllerCondition).Status == metav1.ConditionFalse {
 		return ctrl.Result{}, nil
 	}
-	if cr.Spec.PackageID.Revision == "" {
+	if cr.Spec.PackageRevID.Revision == "" {
 		log.Info("package not released")
 		return ctrl.Result{}, nil
 	}
@@ -161,7 +161,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.GetCondition(controllerCondition).Status == metav1.ConditionFalse {
 		rootSyncKey := types.NamespacedName{
 			Namespace: gitopsNamespace,
-			Name:      cr.Spec.PackageID.DNSName(),
+			Name:      cr.Spec.PackageRevID.DNSName(),
 		}
 		rootSync := &configsyncv1beta1.RootSync{}
 		if err := r.Get(ctx, rootSyncKey, rootSync); err != nil {
@@ -191,8 +191,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 		// did the spec change
 		if rootSync.Spec.Git == nil ||
-			rootSync.Spec.Git.Revision != cr.Spec.PackageID.GitRevision() ||
-			rootSync.Spec.Git.Branch != cr.Spec.PackageID.Branch(false) {
+			rootSync.Spec.Git.Revision != cr.Spec.PackageRevID.GitRevision() ||
+			rootSync.Spec.Git.Branch != cr.Spec.PackageRevID.Branch(false) {
 			rootSync, err := r.buildRootSync(ctx, cr)
 			if err != nil {
 				log.Error("cannot build rootSync", "error", err)
@@ -260,16 +260,16 @@ func (r *reconciler) buildRootSync(ctx context.Context, pkgRev *pkgv1alpha1.Pack
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: gitopsNamespace,
-				Name:      pkgRev.Spec.PackageID.DNSName(),
+				Name:      pkgRev.Spec.PackageRevID.DNSName(),
 			},
 			Spec: configsyncv1beta1.RootSyncSpec{
 				SourceFormat: "unstructured",
 				SourceType:   string(configv1alpha1.RepositoryTypeGit),
 				Git: &configsyncv1beta1.Git{
 					Repo:     repo.Spec.Git.URL,
-					Branch:   pkgRev.Spec.PackageID.Branch(false),
-					Revision: pkgRev.Spec.PackageID.GitRevision(),
-					Dir:      pkgRev.Spec.PackageID.OutDir(),
+					Branch:   pkgRev.Spec.PackageRevID.Branch(false),
+					Revision: pkgRev.Spec.PackageRevID.GitRevision(),
+					Dir:      pkgRev.Spec.PackageRevID.OutDir(),
 					Auth:     "token",
 					SecretRef: &configsyncv1beta1.SecretReference{
 						Name: repo.Spec.Git.Credentials,
@@ -289,7 +289,7 @@ func (r *reconciler) getRepo(ctx context.Context, cr *pkgv1alpha1.PackageRevisio
 	log := log.FromContext(ctx)
 	repokey := types.NamespacedName{
 		Namespace: cr.Namespace,
-		Name:      cr.Spec.PackageID.Repository}
+		Name:      cr.Spec.PackageRevID.Repository}
 
 	repo := &configv1alpha1.Repository{}
 	if err := r.Get(ctx, repokey, repo); err != nil {

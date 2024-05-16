@@ -25,8 +25,8 @@ import (
 func getkeyFromPkgRev(cr *pkgv1alpha1.PackageRevision) storebackend.Key {
 	return storebackend.KeyFromNSN(
 		types.NamespacedName{
-			Namespace: cr.Spec.PackageID.Target,
-			Name:      cr.Spec.PackageID.PkgString(),
+			Namespace: cr.Spec.PackageRevID.Target,
+			Name:      cr.Spec.PackageRevID.PkgString(),
 		},
 	)
 }

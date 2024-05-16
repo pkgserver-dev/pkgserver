@@ -38,12 +38,12 @@ func (r *gitRepository) getLatestRevision(ctx context.Context, pkgRev *pkgv1alph
 	if err != nil {
 		return "", err
 	}
-	log.Info("getLatestRevision", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageID)
+	log.Info("getLatestRevision", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageRevID)
 
 	pkgTags := []string{}
 	if err = tags.ForEach(func(t *plumbing.Reference) error {
-		log.Info("getLatestRevision", "package", pkgRev.Spec.PackageID.Package, "tag", t.Name().String())
-		if strings.Contains(t.Name().String(), pkgRev.Spec.PackageID.Package) {
+		log.Info("getLatestRevision", "package", pkgRev.Spec.PackageRevID.Package, "tag", t.Name().String())
+		if strings.Contains(t.Name().String(), pkgRev.Spec.PackageRevID.Package) {
 			// add the revision (last part of the tag (syntax ns/pkg/rev)) to the pkg Tags
 			pkgTags = append(pkgTags, filepath.Base(t.Name().String()))
 		}

@@ -77,10 +77,10 @@ func SelectableFields(obj *pkgv1alpha1.PackageRevisionResources) fields.Set {
 	return fields.Set{
 		"metadata.namespace":       obj.Namespace,
 		"metadata.name":            obj.Name,
-		"spec.packgeID.repository": obj.Spec.PackageID.Repository,
-		"spec.packgeID.package":    obj.Spec.PackageID.Package,
-		"spec.packgeID.revision":   obj.Spec.PackageID.Revision,
-		"spec.packgeID.workspace":  obj.Spec.PackageID.Workspace,
+		"spec.packgeID.repository": obj.Spec.PackageRevID.Repository,
+		"spec.packgeID.package":    obj.Spec.PackageRevID.Package,
+		"spec.packgeID.revision":   obj.Spec.PackageRevID.Revision,
+		"spec.packgeID.workspace":  obj.Spec.PackageRevID.Workspace,
 	}
 	//fieldSet := generic.ObjectMetaFieldsSet(&obj.ObjectMeta, true)
 }
@@ -92,28 +92,28 @@ func Indexers() *cache.Indexers {
 			if !ok {
 				return []string{}, nil
 			}
-			return []string{pkgRevRes.Spec.PackageID.Repository}, nil
+			return []string{pkgRevRes.Spec.PackageRevID.Repository}, nil
 		},
 		"f:spec.package": func(obj interface{}) ([]string, error) {
 			pkgRevRes, ok := obj.(*pkgv1alpha1.PackageRevisionResources)
 			if !ok {
 				return []string{}, nil
 			}
-			return []string{pkgRevRes.Spec.PackageID.Package}, nil
+			return []string{pkgRevRes.Spec.PackageRevID.Package}, nil
 		},
 		"f:spec.revision": func(obj interface{}) ([]string, error) {
 			pkgRevRes, ok := obj.(*pkgv1alpha1.PackageRevisionResources)
 			if !ok {
 				return []string{}, nil
 			}
-			return []string{pkgRevRes.Spec.PackageID.Revision}, nil
+			return []string{pkgRevRes.Spec.PackageRevID.Revision}, nil
 		},
 		"f:spec.workspace": func(obj interface{}) ([]string, error) {
 			pkgRevRes, ok := obj.(*pkgv1alpha1.PackageRevisionResources)
 			if !ok {
 				return []string{}, nil
 			}
-			return []string{pkgRevRes.Spec.PackageID.Revision}, nil
+			return []string{pkgRevRes.Spec.PackageRevID.Revision}, nil
 		},
 	}
 }
@@ -166,8 +166,8 @@ func buildPackageRevisionResources(pkgRev *pkgv1alpha1.PackageRevision, resource
 	return pkgv1alpha1.BuildPackageRevisionResources(
 		*pkgRev.ObjectMeta.DeepCopy(),
 		pkgv1alpha1.PackageRevisionResourcesSpec{
-			PackageID: *pkgRev.Spec.PackageID.DeepCopy(),
-			Resources: resources,
+			PackageRevID: *pkgRev.Spec.PackageRevID.DeepCopy(),
+			Resources:    resources,
 		},
 		pkgv1alpha1.PackageRevisionResourcesStatus{},
 	)

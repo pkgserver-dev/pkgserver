@@ -23,7 +23,7 @@ import (
 
 	"github.com/henderiw/apiserver-builder/pkg/builder/resource"
 	"github.com/pkgserver-dev/pkgserver/apis/condition"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -107,13 +107,13 @@ func (r *PackageRevision) SetConditions(c ...condition.Condition) {
 }
 
 func (r *PackageRevision) ValidateRepository() error {
-	repoName := pkgid.GetRepoNameFromPkgRevName(r.GetName())
-	if repoName != r.Spec.PackageID.Repository {
+	repoName := pkgrevid.GetRepoNameFromPkgRevName(r.GetName())
+	if repoName != r.Spec.PackageRevID.Repository {
 		return fmt.Errorf("the name of the %s, must start with the repo name as it is used in lookups for %s, got name: %s, spec: %s",
 			PackageRevisionSingular,
 			PackageRevisionResourcesSingular,
 			repoName,
-			r.Spec.PackageID.Repository,
+			r.Spec.PackageRevID.Repository,
 		)
 	}
 	return nil
@@ -232,7 +232,7 @@ func ConvertPackageRevisionsFieldSelector(label, value string) (internalLabel, i
 		return label, value, nil
 	case "metadata.namespace":
 		return label, value, nil
-	case "spec.packageID.target", "spec.packageID.repository", "spec.packageID.realm", "spec.packageID.package", "spec.packageID.workspace", "spec.packageID.revision", "spec.lifecycle":
+	case "spec.packageRevID.target", "spec.packageRevID.repository", "spec.packageRevID.realm", "spec.packageRevID.package", "spec.packageRevID.workspace", "spec.packageRevID.revision", "spec.lifecycle":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("%q is not a known field selector", label)

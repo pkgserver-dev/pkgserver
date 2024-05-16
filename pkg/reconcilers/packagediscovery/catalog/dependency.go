@@ -21,7 +21,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -32,20 +32,20 @@ type Dependency struct {
 	resolutionError    error
 	resolutionErrors   map[schema.GroupVersionKind]error
 	resolutionWarnings map[schema.GroupVersionKind]error
-	pkgId              pkgid.PackageID
-	pkgDependencies    map[schema.GroupVersionKind]sets.Set[pkgid.Upstream]
-	resDependencies   sets.Set[schema.GroupVersionKind]
+	pkgId              pkgrevid.PackageRevID
+	pkgDependencies    map[schema.GroupVersionKind]sets.Set[pkgrevid.Upstream]
+	resDependencies    sets.Set[schema.GroupVersionKind]
 }
 
-func NewDependency(pkgID pkgid.PackageID) *Dependency {
+func NewDependency(pkgID pkgrevid.PackageRevID) *Dependency {
 	return &Dependency{
 		m:                  new(sync.RWMutex),
 		resolutionError:    nil,
 		resolutionErrors:   map[schema.GroupVersionKind]error{},
 		resolutionWarnings: map[schema.GroupVersionKind]error{},
 		pkgId:              pkgID,
-		pkgDependencies:    map[schema.GroupVersionKind]sets.Set[pkgid.Upstream]{},
-		resDependencies:   sets.Set[schema.GroupVersionKind]{},
+		pkgDependencies:    map[schema.GroupVersionKind]sets.Set[pkgrevid.Upstream]{},
+		resDependencies:    sets.Set[schema.GroupVersionKind]{},
 	}
 }
 
@@ -105,21 +105,21 @@ func (r *Dependency) AddGVKResolutionWarning(gvk schema.GroupVersionKind, err er
 	r.resolutionWarnings[gvk] = err
 }
 
-func (r *Dependency) AddPkgDependency(gvk schema.GroupVersionKind, upstream pkgid.Upstream) {
+func (r *Dependency) AddPkgDependency(gvk schema.GroupVersionKind, upstream pkgrevid.Upstream) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
 	if _, ok := r.pkgDependencies[gvk]; !ok {
-		r.pkgDependencies[gvk] = sets.New[pkgid.Upstream]()
+		r.pkgDependencies[gvk] = sets.New[pkgrevid.Upstream]()
 	}
 	r.pkgDependencies[gvk].Insert(*upstream.DeepCopy())
 }
 
 // ListPkgDependencies lists a unique set of upstream packages
-func (r *Dependency) ListPkgDependencies() []pkgid.Upstream {
+func (r *Dependency) ListPkgDependencies() []pkgrevid.Upstream {
 	r.m.RLock()
 	defer r.m.RUnlock()
-	upstreamSet := sets.New[pkgid.Upstream]()
+	upstreamSet := sets.New[pkgrevid.Upstream]()
 	for _, upstreams := range r.pkgDependencies {
 		for _, upstream := range upstreams.UnsortedList() {
 			upstreamSet.Insert(upstream)
@@ -132,10 +132,10 @@ func (r *Dependency) ListPkgDependencies() []pkgid.Upstream {
 	return upstreams
 }
 
-func (r *Dependency) ListGVKPkgDependencies() map[schema.GroupVersionKind][]pkgid.Upstream {
+func (r *Dependency) ListGVKPkgDependencies() map[schema.GroupVersionKind][]pkgrevid.Upstream {
 	r.m.RLock()
 	defer r.m.RUnlock()
-	gvkPkgDeps := map[schema.GroupVersionKind][]pkgid.Upstream{}
+	gvkPkgDeps := map[schema.GroupVersionKind][]pkgrevid.Upstream{}
 	for gvk, upstreamSets := range r.pkgDependencies {
 		upstreams := upstreamSets.UnsortedList()
 		sort.SliceStable(upstreams, func(i, j int) bool {

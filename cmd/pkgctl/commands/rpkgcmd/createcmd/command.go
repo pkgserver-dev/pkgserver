@@ -23,7 +23,7 @@ import (
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,9 +46,6 @@ func NewRunner(ctx context.Context, version string, cfg *genericclioptions.Confi
 	r.Command = cmd
 	r.cfg = cfg
 
-	r.Command.Flags().StringVar(
-		&r.source, "src", "", "source from which the pkg should be cloned")
-
 	return r
 }
 
@@ -60,7 +57,6 @@ type Runner struct {
 	Command *cobra.Command
 	cfg     *genericclioptions.ConfigFlags
 	client  client.Client
-	source  string
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
@@ -82,17 +78,8 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		namespace = *r.cfg.Namespace
 	}
 
-	var err error
-	var srcPkgID *pkgid.PackageID
-	if r.source != "" {
-		srcPkgID, err = pkgid.ParsePkgRev2PkgID(r.source)
-		if err != nil {
-			return err
-		}
-	}
-
 	pkgRevName := args[0]
-	dstPkgID, err := pkgid.ParsePkgRev2PkgID(pkgRevName)
+	dstPkgID, err := pkgrevid.ParsePkgRev2PkgRevID(pkgRevName)
 	if err != nil {
 		return err
 	}
@@ -103,8 +90,8 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 			Namespace: namespace,
 		},
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID: *dstPkgID,
-			Lifecycle: pkgv1alpha1.PackageRevisionLifecycleDraft,
+			PackageRevID: *dstPkgID,
+			Lifecycle:    pkgv1alpha1.PackageRevisionLifecycleDraft,
 			Tasks: []pkgv1alpha1.Task{
 				{
 					Type: pkgv1alpha1.TaskTypeInit,
@@ -113,31 +100,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		},
 		pkgv1alpha1.PackageRevisionStatus{},
 	)
-
-	if srcPkgID != nil {
-		pkgRev = pkgv1alpha1.BuildPackageRevision(
-			metav1.ObjectMeta{
-				Name:      pkgRevName,
-				Namespace: namespace,
-			},
-			pkgv1alpha1.PackageRevisionSpec{
-				PackageID: *dstPkgID,
-				Lifecycle: pkgv1alpha1.PackageRevisionLifecycleDraft,
-				Upstream: &pkgid.Upstream{
-					Repository: srcPkgID.Repository,
-					Realm:      srcPkgID.Realm,
-					Package:    srcPkgID.Package,
-					Revision:   srcPkgID.Revision,
-				},
-				Tasks: []pkgv1alpha1.Task{
-					{
-						Type: pkgv1alpha1.TaskTypeClone,
-					},
-				},
-			},
-			pkgv1alpha1.PackageRevisionStatus{},
-		)
-	}
 
 	if err := r.client.Create(ctx, pkgRev); err != nil {
 		return err

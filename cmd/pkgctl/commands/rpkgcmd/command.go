@@ -21,9 +21,12 @@ import (
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/clonecmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/createcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/deletecmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/getcmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/pullcmd"
+	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/pushcmd"
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/commands/rpkgcmd/updatestatuscmd"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -53,8 +56,11 @@ func GetCommand(ctx context.Context, version string, kubeflags *genericclioption
 		//clonecmd.NewCommand(ctx, version, kubeflags),
 		getcmd.NewCommand(ctx, version, kubeflags),
 		createcmd.NewCommand(ctx, version, kubeflags),
+		clonecmd.NewCommand(ctx, version, kubeflags),
 		deletecmd.NewCommand(ctx, version, kubeflags),
 		updatestatuscmd.NewCommand(ctx, version, kubeflags),
+		pullcmd.NewCommand(ctx, version, kubeflags),
+		pushcmd.NewCommand(ctx, version, kubeflags),
 		////proposecmd.NewCommand(ctx, version, kubeflags),
 		////proposedeletecmd.NewCommand(ctx, version, kubeflags),
 		//pushcmd.NewCommand(ctx, version, kubeflags),

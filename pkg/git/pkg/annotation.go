@@ -58,9 +58,9 @@ func AnnotateCommitMessage(message string, annotation *gitAnnotation) (string, e
 
 func GetGitAnnotation(pkgRev *pkgv1alpha1.PackageRevision) *gitAnnotation {
 	a := &gitAnnotation{
-		PackagePath:   pkgRev.Spec.PackageID.Package,
-		WorkspaceName: pkgRev.Spec.PackageID.Workspace,
-		Revision:      pkgRev.Spec.PackageID.Revision,
+		PackagePath:   pkgRev.Spec.PackageRevID.Package,
+		WorkspaceName: pkgRev.Spec.PackageRevID.Workspace,
+		Revision:      pkgRev.Spec.PackageRevID.Revision,
 		Lifecycle:     string(pkgRev.Spec.Lifecycle),
 	}
 	if len(pkgRev.Spec.Tasks) != 0 {

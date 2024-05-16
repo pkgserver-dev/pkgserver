@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proposecmd
+package listcmd
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	//docs "github.com/pkgserver-dev/pkgserver/internal/docs/generated/initdocs"
 
@@ -25,7 +27,6 @@ import (
 	"github.com/pkgserver-dev/pkgserver/cmd/pkgctl/apis"
 	"github.com/pkgserver-dev/pkgserver/pkg/client"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -33,8 +34,8 @@ import (
 func NewRunner(ctx context.Context, version string, cfg *genericclioptions.ConfigFlags, pkgctlcfg *apis.ConfigFlags) *Runner {
 	r := &Runner{}
 	cmd := &cobra.Command{
-		Use:  "propose PKGREV [flags]",
-		Args: cobra.ExactArgs(1),
+		Use:  "list [flags]",
+		Args: cobra.ExactArgs(0),
 		//Short:   docs.InitShort,
 		//Long:    docs.InitShort + "\n" + docs.InitLong,
 		//Example: docs.InitExamples,
@@ -64,31 +65,36 @@ type Runner struct {
 }
 
 func (r *Runner) preRunE(_ *cobra.Command, _ []string) error {
-	client, err := client.CreateClientWithFlags(r.cfg)
-	if err != nil {
-		return err
+	if !r.local {
+		client, err := client.CreateClientWithFlags(r.cfg)
+		if err != nil {
+			return err
+		}
+		r.client = client
+	} else {
+		return fmt.Errorf("this command only excecutes on k8s, got: %t", r.local)
 	}
-	r.client = client
 	return nil
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx := c.Context()
 	//log := log.FromContext(ctx)
-	//log.Info("propose packagerevision", "name", args[0])
+	//log.Info("get packagerevision", "name", args[0])
 
-	namespace := "default"
-	if r.cfg.Namespace != nil && *r.cfg.Namespace != "" {
-		namespace = *r.cfg.Namespace
-	}
-
-	pkgRev := &pkgv1alpha1.PackageRevision{}
-	if err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: args[0]}, pkgRev); err != nil {
+	pkgRevList := &pkgv1alpha1.PackageRevisionList{}
+	if err := r.client.List(ctx, pkgRevList); err != nil {
 		return err
 	}
+	pkgRevs := make([]pkgv1alpha1.PackageRevision, len(pkgRevList.Items))
+	copy(pkgRevs, pkgRevList.Items)
+	sort.SliceStable(pkgRevs, func(i, j int) bool {
+		return pkgRevs[i].Name < pkgRevs[j].Name
+	})
 
-	pkgRev.Spec.Tasks = []pkgv1alpha1.Task{}
-	pkgRev.Spec.Lifecycle = pkgv1alpha1.PackageRevisionLifecycleProposed
+	for _, pkgRev := range pkgRevs {
+		fmt.Println(pkgRev.Name, pkgRev.Spec.PackageRevID.Package, pkgRev.Spec.PackageRevID.Workspace, pkgRev.Spec.PackageRevID.Revision, pkgRev.Spec.Lifecycle)
+	}
 
-	return r.client.Update(ctx, pkgRev)
+	return nil
 }
