@@ -16,19 +16,20 @@ RUN adduser --shell /bin/false --uid $USERID --disabled-login --home /app/ --no-
     && sed -i -r 's#^(.*):[^:]*$#\1:/bin/false#' /etc/passwd
 
 #
-FROM scratch
-ARG USERID=10000
+FROM alpine:latest
+#ARG USERID=10000
 # add-in our timezone data file
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+#COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # add-in our unprivileged user
-COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
+#COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
 # add-in our ca certificates
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --chown=$USERID:$USERID pkgserver /app/
+#COPY --chown=$USERID:$USERID pkgserver /app/
+COPY pkgserver /app/
 WORKDIR /app
 
 # from now on, run as the unprivileged user
-USER $USERID
+#USER $USERID
 
 ENTRYPOINT [ "/app/pkgserver" ]

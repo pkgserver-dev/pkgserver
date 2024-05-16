@@ -25,7 +25,7 @@ COPY pkg/ pkg/
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o pkg-server main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o pkgserver main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
@@ -34,7 +34,7 @@ FROM alpine:latest
 #FROM scratch
 WORKDIR /
 COPY ./bin/kform-provider-kubernetes ./providers/kform-provider-kubernetes
-COPY --from=builder /workspace/pkg-server /app/
+COPY --from=builder /workspace/pkgserver /app/
 #USER 65532:65532
 
-ENTRYPOINT ["/app/pkg-server"]
+ENTRYPOINT ["/app/pkgserver"]
