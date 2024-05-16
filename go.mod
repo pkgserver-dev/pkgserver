@@ -30,7 +30,7 @@ replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.2
 
 require (
 	github.com/adrg/xdg v0.4.0
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/gogo/protobuf v1.3.2
