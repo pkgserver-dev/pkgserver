@@ -203,7 +203,7 @@ func (r *gitRepository) getParentCommit(ctx context.Context, pkgRev *pkgv1alpha1
 	log := log.FromContext(ctx)
 	var parentCommit *object.Commit
 	var commitString string
-	log.Info("getParentCommit", "repo", r.cr.Name, "pkgID", pkgRev.Spec.PackageRevID)
+	log.Info("getParentCommit", "repo", r.cr.Name, "pkgRevID", pkgRev.Spec.PackageRevID)
 
 	// if the workspace package reference exists we return this package reference
 	// if not we can get the parentCommit from either: latest pkgRev, main, a specific Version
