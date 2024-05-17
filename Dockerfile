@@ -36,6 +36,7 @@ WORKDIR /
 #COPY ./bin/kform-provider-kubernetes ./providers/kform-provider-kubernetes
 RUN apk add --update && \
     apk add --no-cache openssh && \
+    apk add tar %% \
     apk add curl && \
     rm -rf /tmp/*/var/cache/apk/*
 RUN curl -sL https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
