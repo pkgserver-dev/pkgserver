@@ -26,7 +26,7 @@ FROM alpine:latest
 #COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 RUN apk add --update && \
     apk add --no-cache openssh && \
-    apk add tar %% \
+    apk add tar && \
     apk add curl && \
     rm -rf /tmp/*/var/cache/apk/*
 RUN wget https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
