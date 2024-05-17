@@ -32,7 +32,7 @@ RUN apk add --update && \
 RUN curl -sL https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
 
 #COPY --chown=$USERID:$USERID pkgserver /app/
-COPY pkgserver /app/./install
+COPY pkgserver /app/
 WORKDIR /app
 
 # from now on, run as the unprivileged user
