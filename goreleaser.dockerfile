@@ -24,6 +24,11 @@ FROM alpine:latest
 #COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
 # add-in our ca certificates
 #COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN apk add --update && \
+    apk add --no-cache openssh && \
+    apk add curl && \
+    rm -rf /tmp/*/var/cache/apk/*
+RUN curl -sL https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
 
 #COPY --chown=$USERID:$USERID pkgserver /app/
 COPY pkgserver /app/

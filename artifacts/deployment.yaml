@@ -73,7 +73,8 @@ spec:
         - name: ENABLE_PACKAGEINSTALLER
           value: "true"
         - name: KFORM_PROVIDER_KUBERNETES
-          value: providers/kform-provider-kubernetes
+          value: /usr/local/bin/kform-provider-kubernetes
+          #value: providers/kform-provider-kubernetes
         volumeMounts:
         - name: apiserver-certs
           mountPath: /apiserver.local.config/certificates

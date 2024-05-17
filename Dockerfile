@@ -33,7 +33,12 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o pk
 FROM alpine:latest
 #FROM scratch
 WORKDIR /
-COPY ./bin/kform-provider-kubernetes ./providers/kform-provider-kubernetes
+#COPY ./bin/kform-provider-kubernetes ./providers/kform-provider-kubernetes
+RUN apk add --update && \
+    apk add --no-cache openssh && \
+    apk add curl && \
+    rm -rf /tmp/*/var/cache/apk/*
+RUN curl -sL https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
 COPY --from=builder /workspace/pkgserver /app/
 #USER 65532:65532
 
