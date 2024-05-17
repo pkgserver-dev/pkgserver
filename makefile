@@ -22,11 +22,6 @@ GOBIN := $(shell go env GOPATH)/bin
 all: codegen fmt vet lint test tidy
 
 .PHONY:
-build:
-	mkdir -p bin
-	CGO_ENABLED=0 go build -o $(GOBIN)/pkgctl cmd/pkgctl/main.go 
-
-.PHONY:
 docker:
 	GOOS=linux GOARCH=arm64 go build -o install/bin/apiserver
 	docker build install --tag apiserver-caas:v0.0.0
