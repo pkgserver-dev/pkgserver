@@ -29,7 +29,7 @@ RUN apk add --update && \
     apk add tar %% \
     apk add curl && \
     rm -rf /tmp/*/var/cache/apk/*
-RUN curl -sL https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
+RUN wget https://github.com/kform-providers/kubernetes/raw/main/install.sh | sh
 
 #COPY --chown=$USERID:$USERID pkgserver /app/
 COPY pkgserver /app/
