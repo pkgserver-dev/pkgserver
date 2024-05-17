@@ -67,18 +67,18 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	//log.Info("approve packagerevision", "name", args[0])
 
 	pkgRevName := args[0]
-	pkgID, err := pkgrevid.ParsePkgRev2PkgRevID(pkgRevName)
+	pkgRevID, err := pkgrevid.ParsePkgRev2PkgRevID(pkgRevName)
 	if err != nil {
 		return err
 	}
 
-	repoName := pkgID.Repository
+	repoName := pkgRevID.Repository
 	var repo apis.Repo
 	if err := viper.UnmarshalKey(fmt.Sprintf("repos.%s", repoName), &repo); err != nil {
 		return err
 	}
 
-	dir := pkgID.Package
+	dir := pkgRevID.Package
 	if len(args) > 2 {
 		dir = args[2]
 	}
@@ -113,7 +113,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		Secret:     repo.Secret,
 		Deployment: repo.Deployment,
 		Directory:  repo.Directory,
-		PkgID:      pkgID,
+		PkgRevID:   pkgRevID,
 		PkgPath:    dir,
 	}
 	if err := writer.Write(ctx, datastore); err != nil {
